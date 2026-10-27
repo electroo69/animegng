@@ -57,3 +57,15 @@ Validate with `node --test tests/*.test.mjs` and `npm run build`.
 Deploy the API from this directory with `vercel deploy --prod`, then deploy the site
 with `npx wrangler pages deploy dist --project-name animegng --branch main`.
 The optional Worker uses `npx wrangler deploy`.
+
+### Verified direct embeds
+
+`worker/embed-links.json` stores explicitly verified AniList ID → episode → sub/dub
+embed URLs, with source and verification date. Currently it covers **One Piece (21),
+episode 1 only**. Add new entries only after verifying the exact title, episode and
+language; IDs cannot be derived from the anime ID. Redeploy Cloudflare after edits.
+For mapped watch routes Cloudflare fetches only anime/episode metadata from Vercel,
+and the browser loads the stored iframe URL directly. `/api/servers/:id/:ep` also
+serves the mapped list locally. Unmapped episodes retain the existing provider flow.
+Embed availability is controlled by the third-party host and is not guaranteed by a
+successful API response. Vercel remains required for metadata.

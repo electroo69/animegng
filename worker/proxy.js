@@ -1,3 +1,5 @@
+import { directServers, directWatch } from './direct-embeds.js';
+
 // Only the public read-only anime API is forwarded to the configured backend.
 export async function proxyApi(request, env, ctx) {
   if (!['GET', 'OPTIONS'].includes(request.method)) {
@@ -14,6 +16,12 @@ export async function proxyApi(request, env, ctx) {
     if (hit) return hit;
   }
   try {
+    const match = incoming.pathname.match(/^\/api\/(watch|servers)\/(\d+)\/(\d+)\/?$/);
+    if (request.method === 'GET' && match && directServers(match[2], match[3])) {
+      const data = match[1] === 'servers' ? directServers(match[2], match[3])
+        : await directWatch(Number(match[2]), Number(match[3]), target.origin);
+      return Response.json(data, { headers: { 'Cache-Control': 'no-store', 'Access-Control-Allow-Origin': '*' } });
+    }
     const upstream = await fetch(target, { method: request.method, headers: { Accept: 'application/json' }, signal: AbortSignal.timeout(55000), redirect: 'manual' });
     if (request.method !== 'OPTIONS' && !upstream.headers.get('Content-Type')?.includes('application/json')) {
       throw new Error('API returned a non-JSON response');
