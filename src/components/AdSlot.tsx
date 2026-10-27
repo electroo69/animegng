@@ -1,8 +1,10 @@
 // Adsterra display banners, placed only in reserved boxes between content: never over the
 // player, never popunders/overlays. Each banner runs in its own sandboxed iframe so
 //  - its global `atOptions` doesn't clash with other units on the page,
-//  - its script can't touch or redirect our page (no allow-top-navigation / allow-same-origin),
-//  - clicks still open the advertiser in a new tab (allow-popups-to-escape-sandbox).
+//  - it can't redirect our page (no allow-top-navigation), only open a new tab on click
+//    (allow-popups-to-escape-sandbox).
+// It does need allow-same-origin: Adsterra's script writes document.cookie unguarded, which throws
+// in an opaque-origin frame and kills the ad before it renders.
 // Banners load only when scrolled near, so they don't slow down the first paint or the player.
 // The banner page is public/ad.html on our own domain: Adsterra only fills requests whose referrer
 // is the registered site (animegng.pages.dev), which an inline srcdoc frame doesn't send.
@@ -54,7 +56,7 @@ export function AdSlot({ size, className }: { size: AdSize; className?: string }
             height={h}
             loading="lazy"
             scrolling="no"
-            sandbox="allow-scripts allow-popups allow-popups-to-escape-sandbox"
+            sandbox="allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox"
             className="block border-0"
           />
         )}
@@ -121,7 +123,7 @@ export function NativeAdTile({ className }: { className?: string }) {
             src={`/native.html?k=${NATIVE_KEY}`}
             loading="lazy"
             scrolling="no"
-            sandbox="allow-scripts allow-popups allow-popups-to-escape-sandbox"
+            sandbox="allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox"
             className="block w-full border-0"
             style={{ height }}
           />
