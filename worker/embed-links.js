@@ -1,0 +1,41 @@
+// Verified AniList id -> episode -> sub/dub embed servers. A JS module rather than JSON because
+// Cloudflare Pages' Git builds bundle Functions with an older esbuild that can't parse
+// `import ... with { type: 'json' }`.
+export default {
+  "21": {
+    "1": {
+      "verifiedAt": "2026-10-27",
+      "source": "https://reanime.to/api/flix/21/1?mal=21",
+      "servers": {
+        "sub": [
+          {
+            "id": "hd2-rtt4nppua1i6-sub",
+            "name": "HD-2",
+            "embed_url": "https://flixcloud.cc/e/rtt4nppua1i6?v=2",
+            "softsub": false
+          },
+          {
+            "id": "hd1-rtt4nppua1i6-sub",
+            "name": "HD-1",
+            "embed_url": "https://flixcloud.cc/e/rtt4nppua1i6?v=1",
+            "softsub": false
+          }
+        ],
+        "dub": [
+          {
+            "id": "hd2-rtt4nppua1i6-dub",
+            "name": "HD-2",
+            "embed_url": "https://flixcloud.cc/e/rtt4nppua1i6?v=2",
+            "softsub": false
+          },
+          {
+            "id": "hd1-rtt4nppua1i6-dub",
+            "name": "HD-1",
+            "embed_url": "https://flixcloud.cc/e/rtt4nppua1i6?v=1",
+            "softsub": false
+          }
+        ]
+      }
+    }
+  }
+}

@@ -60,7 +60,7 @@ The optional Worker uses `npx wrangler deploy`.
 
 ### Verified direct embeds
 
-`worker/embed-links.json` stores explicitly verified AniList ID → episode → sub/dub
+`worker/embed-links.js` stores explicitly verified AniList ID → episode → sub/dub
 embed URLs, with source and verification date. Currently it covers **One Piece (21),
 episode 1 only**. Add new entries only after verifying the exact title, episode and
 language; IDs cannot be derived from the anime ID. Redeploy Cloudflare after edits.

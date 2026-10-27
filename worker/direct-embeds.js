@@ -1,4 +1,4 @@
-import links from './embed-links.json' with { type: 'json' };
+import links from './embed-links.js';
 
 export function directServers(id, episode) {
   return links[String(id)]?.[String(episode)]?.servers ?? null;
