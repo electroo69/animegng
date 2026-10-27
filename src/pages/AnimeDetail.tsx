@@ -1,4 +1,6 @@
 import { useState } from "react"
+import { LeaderboardAd } from "@/components/AdSlot"
+import { WatchLink } from "@/components/WatchLink"
 import { Link, useParams } from "react-router-dom"
 import { motion } from "motion/react"
 import { Award, Clock, ExternalLink, Heart, Play, PlayCircle, Star, TrendingUp, Users } from "lucide-react"
@@ -86,12 +88,12 @@ export default function AnimeDetail() {
 
               <div className="mt-6 flex flex-wrap items-center justify-center gap-3 md:justify-start">
                 {eps > 0 ? (
-                  <Link to={`/watch/${a.id}/${resume ?? 1}`}>
+                  <WatchLink to={`/watch/${a.id}/${resume ?? 1}`}>
                     <ShimmerButton background="linear-gradient(135deg,#ff1f2d,#c4000c)" shimmerColor="#ffb3b8" borderRadius="14px" className="h-12 gap-2 px-7 font-semibold">
                       <Play className="size-4 fill-white" />
                       {resume ? `Continue EP ${resume}` : "Watch EP 1"}
                     </ShimmerButton>
-                  </Link>
+                  </WatchLink>
                 ) : (
                   <span className="flex h-12 items-center rounded-[14px] border border-white/10 bg-white/[0.04] px-6 text-sm text-white/60">Not yet released</span>
                 )}
@@ -156,6 +158,8 @@ export default function AnimeDetail() {
             {tab === "Related" && <Related a={a} />}
             {tab === "Details" && <Details a={a} />}
           </div>
+
+          <LeaderboardAd className="mt-16" />
 
           {a.recommendations.length > 0 && (
             <Section className="mt-16">

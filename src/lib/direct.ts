@@ -1,7 +1,8 @@
 // Direct HLS streams from aniclover's public API, fetched by the viewer's browser.
 // Their API and the stream/subtitle proxy send `Access-Control-Allow-Origin: *`, so no server of
 // ours sits in between (that's what got video lookups filtered when they ran on Cloudflare).
-import { useQuery } from "@tanstack/react-query"
+import { useCallback } from "react"
+import { useQuery, useQueryClient } from "@tanstack/react-query"
 
 const ANICLOVER = "https://api.aniclover.cc/api/watch"
 
@@ -42,11 +43,25 @@ async function fetchDirect(id: number, ep: number, lang: "sub" | "dub"): Promise
   }
 }
 
+const directQuery = (id: number, ep: number, lang: "sub" | "dub") => ({
+  queryKey: ["direct", id, ep, lang],
+  queryFn: () => fetchDirect(id, ep, lang),
+  staleTime: 20 * 60_000, // proxied stream URLs are signed; don't hold them for long
+  retry: 1,
+})
+
 export const useDirectStream = (id: number, ep: number, lang: "sub" | "dub", enabled = true) =>
-  useQuery({
-    queryKey: ["direct", id, ep, lang],
-    queryFn: () => fetchDirect(id, ep, lang),
-    enabled: enabled && !!id && !!ep,
-    staleTime: 20 * 60_000, // proxied stream URLs are signed; don't hold them for long
-    retry: 1,
-  })
+  useQuery({ ...directQuery(id, ep, lang), enabled: enabled && !!id && !!ep })
+
+// The stream lookup is ~1.3s of the time-to-first-frame, so warm it before the viewer gets there:
+// on hover/focus of episode links and Next, and partway through the current episode.
+// Only the lookup JSON is prefetched; playlists stay on-demand to avoid the proxy's 429s.
+export function usePrefetchDirect() {
+  const qc = useQueryClient()
+  return useCallback(
+    (id: number, ep: number, lang: "sub" | "dub" = "sub") => {
+      if (id && ep) void qc.prefetchQuery(directQuery(id, ep, lang))
+    },
+    [qc],
+  )
+}

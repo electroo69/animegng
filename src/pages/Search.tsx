@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react"
+import { LeaderboardAd } from "@/components/AdSlot"
 import { useSearchParams } from "react-router-dom"
 import { useInfiniteQuery } from "@tanstack/react-query"
 import { Loader2, Minus, Plus, Search as SearchIcon, SlidersHorizontal, X } from "lucide-react"
@@ -178,6 +179,7 @@ export default function Search() {
             <p className="mt-1 text-sm text-white/45">Try a different title or loosen the filters.</p>
           </div>
         )}
+        <LeaderboardAd className="mt-12" />
         {query.hasNextPage && (
           <div className="mt-10 flex justify-center">
             <button

@@ -80,6 +80,8 @@ export function VideoPlayer({ stream, poster, startAt = 0, autoplay, autoSkipInt
   const [fullscreen, setFullscreen] = useState(false)
   const [hover, setHover] = useState<{ x: number; t: number } | null>(null)
   const [error, setError] = useState<string | null>(null)
+  // Subtitle files load only once video is playing, so they don't compete with the first segment.
+  const [subsReady, setSubsReady] = useState(false)
 
   const updatePrefs = (p: Partial<VideoPrefs>) =>
     setPrefs((cur) => {
@@ -93,6 +95,7 @@ export function VideoPlayer({ stream, poster, startAt = 0, autoplay, autoSkipInt
     const v = video.current
     if (!v) return
     setError(null)
+    setSubsReady(false)
     setWaiting(true)
     setLevels([])
     setLevel(-1)
@@ -105,6 +108,7 @@ export function VideoPlayer({ stream, poster, startAt = 0, autoplay, autoSkipInt
         enableWorker: true,
         capLevelToPlayerSize: true,
         startLevel: -1,
+        startFragPrefetch: true,
         manifestLoadPolicy: loadPolicy(4, 10000, 20000),
         playlistLoadPolicy: loadPolicy(4, 10000, 20000),
         fragLoadPolicy: loadPolicy(6, 10000, 120000),
@@ -289,14 +293,17 @@ export function VideoPlayer({ stream, poster, startAt = 0, autoplay, autoSkipInt
           setControls(true)
         }}
         onWaiting={() => setWaiting(true)}
-        onPlaying={() => setWaiting(false)}
+        onPlaying={() => {
+          setWaiting(false)
+          setSubsReady(true)
+        }}
         onCanPlay={() => setWaiting(false)}
         onLoadedMetadata={(e) => setDuration(e.currentTarget.duration)}
         onDurationChange={(e) => setDuration(e.currentTarget.duration)}
         onTimeUpdate={onTime}
         onEnded={onEnded}
       >
-        {stream.subtitles.map((s) => (
+        {subsReady && stream.subtitles.map((s) => (
           <track key={s.url} kind="subtitles" src={s.url} label={s.label} srcLang={s.label.slice(0, 2).toLowerCase()} />
         ))}
       </video>

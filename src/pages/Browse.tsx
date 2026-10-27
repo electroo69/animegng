@@ -1,4 +1,5 @@
 import { useParams } from "react-router-dom"
+import { LeaderboardAd } from "@/components/AdSlot"
 import { useInfiniteQuery } from "@tanstack/react-query"
 import { Loader2 } from "lucide-react"
 import { AnimeCard, CardSkeleton, EpisodeCard } from "@/components/AnimeCard"
@@ -48,6 +49,7 @@ export default function Browse() {
             {q.isLoading ? Array.from({ length: 18 }, (_, n) => <CardSkeleton key={n} />) : (items as Card[]).map((a, n) => <AnimeCard key={a.id} anime={a} rank={kind === "top" || kind === "trending" ? n + 1 : undefined} />)}
           </div>
         )}
+        <LeaderboardAd className="mt-12" />
         {q.hasNextPage && (
           <div className="mt-10 flex justify-center">
             <button onClick={() => q.fetchNextPage()} disabled={q.isFetchingNextPage} className="flex h-11 items-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-8 text-sm font-semibold transition hover:border-primary/50 hover:bg-primary/10">

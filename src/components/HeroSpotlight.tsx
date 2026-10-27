@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react"
+import { WatchLink } from "@/components/WatchLink"
 import { Link } from "react-router-dom"
 import { AnimatePresence, motion } from "motion/react"
 import { Calendar, ChevronLeft, ChevronRight, Clapperboard, Info, Play, Star } from "lucide-react"
@@ -105,12 +106,12 @@ export function HeroSpotlight({ items }: { items: AnimeCard[] }) {
             <p className="mb-7 line-clamp-3 min-h-[4.5em] max-w-xl text-[15px] leading-relaxed text-white/65">{desc || cur.genres.join(" · ")}</p>
 
             <div className="flex flex-wrap items-center gap-3">
-              <Link to={`/watch/${cur.id}/1`}>
+              <WatchLink to={`/watch/${cur.id}/1`}>
                 <ShimmerButton background="linear-gradient(135deg,#ff1f2d,#c4000c)" shimmerColor="#ffb3b8" borderRadius="14px" className="h-12 gap-2 px-7 text-[15px] font-semibold">
                   <Play className="size-4 fill-white" />
                   Watch Now
                 </ShimmerButton>
-              </Link>
+              </WatchLink>
               <Link
                 to={`/anime/${cur.id}`}
                 className="flex h-12 items-center gap-2 rounded-[14px] border border-white/15 bg-white/[0.06] px-6 text-[15px] font-semibold text-white backdrop-blur-md transition hover:border-white/30 hover:bg-white/[0.12]"

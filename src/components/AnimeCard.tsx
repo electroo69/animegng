@@ -1,4 +1,5 @@
 import { useState } from "react"
+import { WatchLink } from "@/components/WatchLink"
 import { Link } from "react-router-dom"
 import { Captions, Clock, Play, Star } from "lucide-react"
 import { BorderBeam } from "@/components/ui/border-beam"
@@ -73,7 +74,7 @@ export function AnimeCard({ anime, rank, className }: { anime: Card; rank?: numb
 export function EpisodeCard({ item }: { item: AiredItem }) {
   const a = item.anime
   return (
-    <Link to={`/watch/${a.id}/${item.episode}`} className="group/ep block">
+    <WatchLink to={`/watch/${a.id}/${item.episode}`} className="group/ep block">
       <div className="relative aspect-video overflow-hidden rounded-xl bg-white/[0.04] ring-1 ring-white/[0.07] transition duration-500 group-hover/ep:shadow-[0_20px_50px_-20px_rgba(43,75,255,0.6)]">
         <img
           src={a.banner_image ?? a.cover_image.extra_large}
@@ -93,7 +94,7 @@ export function EpisodeCard({ item }: { item: AiredItem }) {
           <Play className="ml-0.5 size-4 fill-white text-white" />
         </div>
       </div>
-    </Link>
+    </WatchLink>
   )
 }
 

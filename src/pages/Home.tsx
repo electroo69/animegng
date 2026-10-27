@@ -1,4 +1,6 @@
 import { Link } from "react-router-dom"
+import { AdSlot, LeaderboardAd } from "@/components/AdSlot"
+import { WatchLink } from "@/components/WatchLink"
 import { CalendarDays, Play, X } from "lucide-react"
 import { HeroSpotlight } from "@/components/HeroSpotlight"
 import { AnimeCard, CardSkeleton, EpisodeCard } from "@/components/AnimeCard"
@@ -49,6 +51,8 @@ export default function Home() {
               </div>
             </Section>
 
+            <LeaderboardAd />
+
             <Section>
               <SectionHeader eyebrow={data ? `${cap(data.season.season)} ${data.season.year}` : "This season"} title="Airing This Season" href="/browse/seasonal" />
               <div className="grid grid-cols-2 gap-x-4 gap-y-6 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-4 2xl:grid-cols-6">
@@ -59,6 +63,7 @@ export default function Home() {
 
           <aside className="space-y-6 xl:sticky xl:top-24 xl:self-start">
             <TopTen />
+            <AdSlot size="300x250" />
             <AiringToday />
           </aside>
         </div>
@@ -100,7 +105,7 @@ function ContinueWatching() {
       <Rail>
         {history.map((h) => (
           <div key={h.anime.id} className="group/cw relative w-[78vw] shrink-0 snap-start sm:w-[320px]">
-            <Link to={`/watch/${h.anime.id}/${h.episode}`} className="block">
+            <WatchLink to={`/watch/${h.anime.id}/${h.episode}`} className="block">
               <div className="relative aspect-video overflow-hidden rounded-xl ring-1 ring-white/[0.08]">
                 <img src={h.thumbnail ?? h.anime.banner_image ?? h.anime.cover_image.extra_large} alt="" className="size-full object-cover transition duration-700 group-hover/cw:scale-105" loading="lazy" />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
@@ -120,7 +125,7 @@ function ContinueWatching() {
                   </div>
                 ) : null}
               </div>
-            </Link>
+            </WatchLink>
             <button
               onClick={() => removeHistory(h.anime.id)}
               aria-label="Remove from history"

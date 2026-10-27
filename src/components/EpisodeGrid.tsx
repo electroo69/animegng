@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react"
-import { Link } from "react-router-dom"
+import { WatchLink } from "@/components/WatchLink"
 import { LayoutGrid, List, Play, Search, Star } from "lucide-react"
 import type { Episode } from "@/lib/api"
 import { cn } from "@/lib/utils"
@@ -56,7 +56,7 @@ export function EpisodeGrid({ animeId, episodes, total, fallbackImage }: { anime
       {view === "grid" ? (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
           {shown.map((e) => (
-            <Link key={e.episode_number} to={`/watch/${animeId}/${e.episode_number}`} className="group/e block">
+            <WatchLink key={e.episode_number} to={`/watch/${animeId}/${e.episode_number}`} className="group/e block">
               <div className="relative aspect-video overflow-hidden rounded-xl bg-white/[0.04] ring-1 ring-white/[0.07]">
                 {(e.thumbnail || fallbackImage) && (
                   <img src={e.thumbnail ?? fallbackImage!} alt="" loading="lazy" className={cn("size-full object-cover transition duration-700 group-hover/e:scale-105", !e.thumbnail && "opacity-40 blur-[2px]")} />
@@ -81,13 +81,13 @@ export function EpisodeGrid({ animeId, episodes, total, fallbackImage }: { anime
                   </span>
                 ) : null}
               </p>
-            </Link>
+            </WatchLink>
           ))}
         </div>
       ) : (
         <div className="divide-y divide-white/[0.05] overflow-hidden rounded-xl border border-white/[0.07]">
           {shown.map((e) => (
-            <Link key={e.episode_number} to={`/watch/${animeId}/${e.episode_number}`} className="group flex items-center gap-4 px-4 py-3 transition hover:bg-white/[0.03]">
+            <WatchLink key={e.episode_number} to={`/watch/${animeId}/${e.episode_number}`} className="group flex items-center gap-4 px-4 py-3 transition hover:bg-white/[0.03]">
               <span className="w-10 font-mono text-sm text-white/40 group-hover:text-primary">{String(e.episode_number).padStart(2, "0")}</span>
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-medium">{e.title || `Episode ${e.episode_number}`}</p>
@@ -96,7 +96,7 @@ export function EpisodeGrid({ animeId, episodes, total, fallbackImage }: { anime
               {e.is_filler && <span className="rounded bg-amber-500/90 px-1.5 py-0.5 text-[10px] font-bold text-black">FILLER</span>}
               <span className="hidden text-xs text-white/35 sm:block">{e.aired && new Date(e.aired).toLocaleDateString()}</span>
               <Play className="size-4 text-white/30 group-hover:fill-primary group-hover:text-primary" />
-            </Link>
+            </WatchLink>
           ))}
         </div>
       )}

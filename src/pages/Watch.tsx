@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react"
+import { LeaderboardAd } from "@/components/AdSlot"
 import { Link, useNavigate, useParams } from "react-router-dom"
 import { AlertTriangle, Captions, ChevronLeft, ChevronRight, Clock, Lightbulb, Loader2, Mic, Search, Server as ServerIcon, Star } from "lucide-react"
 import { AnimeCard } from "@/components/AnimeCard"
@@ -6,7 +7,7 @@ import { Container, Rail, Section, SectionHeader } from "@/components/Section"
 import { BorderBeam } from "@/components/ui/border-beam"
 import { VideoPlayer } from "@/components/VideoPlayer"
 import { embedSrc, useAnime, useEpisodes, useWatch, type Episode, type Server } from "@/lib/api"
-import { useDirectStream } from "@/lib/direct"
+import { useDirectStream, usePrefetchDirect } from "@/lib/direct"
 import { cap, countdown, formatLabel, score, statusLabel, stripHtml, titleOf } from "@/lib/format"
 import { loadPrefs, recordWatch, resumeTime, saveTime, savePrefs, type PlayerPrefs } from "@/lib/progress"
 import { cn } from "@/lib/utils"
@@ -23,6 +24,8 @@ export default function Watch() {
   const [dim, setDim] = useState(false)
   const frameRef = useRef<HTMLIFrameElement>(null)
   const lastSave = useRef(0)
+  const prefetch = usePrefetchDirect()
+  const prefetchedNext = useRef(0)
 
   const update = (p: Partial<PlayerPrefs>) =>
     setPrefs((cur) => {
@@ -56,7 +59,8 @@ export default function Watch() {
   const server = list.find((s) => s.name === prefs.server) ?? list[0]
   const directStream = server?.name === "Direct" ? direct[lang] : null
   // Wait for the direct lookup before falling back to an embed, so the iframe doesn't flash first.
-  const deciding = prefs.server === "Direct" && directLoading
+  // Only the preferred language's lookup gates playback; the other one can finish later.
+  const deciding = prefs.server === "Direct" && (prefs.lang === "dub" ? directDub.isLoading : directSub.isLoading)
 
   // Start position is captured once per episode so progress ticks don't reload the player.
   const startAt = useMemo(() => resumeTime(id, ep), [id, ep])
@@ -157,6 +161,11 @@ export default function Watch() {
                   autoSkipIntro={prefs.skipIntro}
                   autoSkipOutro={prefs.skipOutro}
                   onProgress={(cur, dur) => {
+                    // Halfway through, look up the next episode's stream so Next/auto-next starts fast.
+                    if (next && dur && cur / dur > 0.5 && prefetchedNext.current !== next) {
+                      prefetchedNext.current = next
+                      prefetch(id, next, lang)
+                    }
                     if (Date.now() - lastSave.current > 5000) {
                       lastSave.current = Date.now()
                       saveTime(id, ep, cur, dur)
@@ -218,7 +227,7 @@ export default function Watch() {
                 <NavBtn disabled={!prev} onClick={() => prev && navigate(`/watch/${id}/${prev}`)}>
                   <ChevronLeft className="size-4" /> Prev
                 </NavBtn>
-                <NavBtn disabled={!next} onClick={() => next && navigate(`/watch/${id}/${next}`)} primary>
+                <NavBtn disabled={!next} onClick={() => next && navigate(`/watch/${id}/${next}`)} onHover={() => next && prefetch(id, next, lang)} primary>
                   Next <ChevronRight className="size-4" />
                 </NavBtn>
               </div>
@@ -271,9 +280,11 @@ export default function Watch() {
                 {current?.aired && <p className="mt-2 text-xs text-white/35">Aired {new Date(current.aired).toLocaleDateString(undefined, { dateStyle: "medium" })}</p>}
               </div>
             </div>
+
+            <LeaderboardAd className="mt-10" />
           </div>
 
-          <EpisodePanel animeId={id} current={ep} episodes={epList} total={total} loading={episodes.isLoading} />
+          <EpisodePanel animeId={id} current={ep} episodes={epList} total={total} loading={episodes.isLoading} onHover={(n) => prefetch(id, n, lang)} />
         </div>
 
         {anime.data?.recommendations.length ? (
@@ -304,11 +315,13 @@ function Toggle({ on, onClick, children }: { on: boolean; onClick: () => void; c
   )
 }
 
-function NavBtn({ disabled, onClick, primary, children }: { disabled: boolean; onClick: () => void; primary?: boolean; children: React.ReactNode }) {
+function NavBtn({ disabled, onClick, onHover, primary, children }: { disabled: boolean; onClick: () => void; onHover?: () => void; primary?: boolean; children: React.ReactNode }) {
   return (
     <button
       disabled={disabled}
       onClick={onClick}
+      onPointerEnter={onHover}
+      onFocus={onHover}
       className={cn(
         "flex h-8 items-center gap-1 rounded-lg px-3 text-xs font-semibold transition disabled:pointer-events-none disabled:opacity-30",
         primary ? "bg-primary text-white hover:bg-primary/85" : "bg-white/[0.06] text-white/80 hover:bg-white/10",
@@ -351,7 +364,7 @@ function ServerRow({ icon: Icon, label, servers, active, onPick, loading }: { ic
 
 const CHUNK = 100
 
-function EpisodePanel({ animeId, current, episodes, total, loading }: { animeId: number; current: number; episodes: Episode[]; total: number; loading: boolean }) {
+function EpisodePanel({ animeId, current, episodes, total, loading, onHover }: { animeId: number; current: number; episodes: Episode[]; total: number; loading: boolean; onHover: (ep: number) => void }) {
   const [q, setQ] = useState("")
   const [range, setRange] = useState(() => Math.floor((current - 1) / CHUNK))
   const activeRef = useRef<HTMLAnchorElement>(null)
@@ -408,6 +421,8 @@ function EpisodePanel({ animeId, current, episodes, total, loading }: { animeId:
                 key={e.episode_number}
                 ref={e.episode_number === current ? activeRef : undefined}
                 to={`/watch/${animeId}/${e.episode_number}`}
+                onPointerEnter={() => onHover(e.episode_number)}
+                onFocus={() => onHover(e.episode_number)}
                 title={e.title ?? undefined}
                 className={cn(
                   "grid h-10 place-items-center rounded-lg font-mono text-sm font-medium transition",
@@ -426,6 +441,8 @@ function EpisodePanel({ animeId, current, episodes, total, loading }: { animeId:
                 key={e.episode_number}
                 ref={on ? activeRef : undefined}
                 to={`/watch/${animeId}/${e.episode_number}`}
+                onPointerEnter={() => onHover(e.episode_number)}
+                onFocus={() => onHover(e.episode_number)}
                 className={cn("group flex items-center gap-3 rounded-xl p-2 transition", on ? "bg-primary/15 ring-1 ring-primary/40" : "hover:bg-white/[0.04]")}
               >
                 <div className="relative aspect-video w-24 shrink-0 overflow-hidden rounded-lg bg-white/[0.05]">
