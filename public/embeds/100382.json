@@ -1,0 +1,24 @@
+{
+  "1": {
+    "verifiedAt": "2026-10-27T14:10:39.194Z",
+    "source": "https://reanime.to/api/flix/100382/1?mal=36632",
+    "verification": "provider-response; playback not individually tested",
+    "servers": {
+      "sub": [
+        {
+          "id": "hd2-h35ptsb85vyj-sub",
+          "name": "HD-2",
+          "embed_url": "https://flixcloud.cc/e/h35ptsb85vyj?v=2",
+          "softsub": false
+        },
+        {
+          "id": "hd1-h35ptsb85vyj-sub",
+          "name": "HD-1",
+          "embed_url": "https://flixcloud.cc/e/h35ptsb85vyj?v=1",
+          "softsub": false
+        }
+      ],
+      "dub": []
+    }
+  }
+}
