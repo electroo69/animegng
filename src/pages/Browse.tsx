@@ -45,7 +45,7 @@ export default function Browse() {
         </BlurFade>
         {latest ? (
           <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
-            {q.isLoading ? Array.from({ length: 12 }, (_, n) => <CardSkeleton key={n} landscape />) : (items as AiredItem[]).map((e) => <EpisodeCard key={`${e.anime.id}-${e.episode}`} item={e} />)}
+            {q.isLoading ? Array.from({ length: 12 }, (_, n) => <CardSkeleton key={n} landscape />) : withNativeAds((items as AiredItem[]).map((e) => <EpisodeCard key={`${e.anime.id}-${e.episode}`} item={e} />), 24)}
           </div>
         ) : (
           <div className="mt-8 grid grid-cols-2 gap-x-4 gap-y-7 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7">

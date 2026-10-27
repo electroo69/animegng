@@ -133,17 +133,15 @@ export function NativeAdTile({ className }: { className?: string }) {
   )
 }
 
-// Interleave a native ad tile into a grid's items: first after `first` items, then every `every`.
-export function withNativeAds(nodes: React.ReactNode[], first = 12, every = 24, max = 3) {
+// Interleave native ad tiles into a grid's items: `adsPerPage` tiles per page of `perPage` items,
+// spread evenly (30/3 -> after items 5, 15 and 25 of each page), never after the final item.
+export function withNativeAds(nodes: React.ReactNode[], perPage = 30, adsPerPage = 3) {
+  const slots = new Set(Array.from({ length: adsPerPage }, (_, k) => Math.round((perPage * (k + 0.5)) / adsPerPage)))
   const out: React.ReactNode[] = []
-  let ads = 0
   nodes.forEach((node, i) => {
     out.push(node)
     const n = i + 1
-    if (ads < max && n >= first && (n - first) % every === 0 && n < nodes.length) {
-      out.push(<NativeAdTile key={`native-ad-${n}`} />)
-      ads++
-    }
+    if (slots.has(((n - 1) % perPage) + 1) && n < nodes.length) out.push(<NativeAdTile key={`native-ad-${n}`} />)
   })
   return out
 }
