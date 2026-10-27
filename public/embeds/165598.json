@@ -1,0 +1,134 @@
+{
+  "1": {
+    "verifiedAt": "2026-10-27T13:54:09.215Z",
+    "source": "https://reanime.to/api/flix/165598/1?mal=55528",
+    "verification": "provider-response; playback not individually tested",
+    "servers": {
+      "sub": [
+        {
+          "id": "hd2-kpuuz43bi8cs-sub",
+          "name": "HD-2",
+          "embed_url": "https://flixcloud.cc/e/kpuuz43bi8cs?v=2",
+          "softsub": false
+        },
+        {
+          "id": "hd1-kpuuz43bi8cs-sub",
+          "name": "HD-1",
+          "embed_url": "https://flixcloud.cc/e/kpuuz43bi8cs?v=1",
+          "softsub": false
+        }
+      ],
+      "dub": []
+    }
+  },
+  "2": {
+    "verifiedAt": "2026-10-27T13:54:10.413Z",
+    "source": "https://reanime.to/api/flix/165598/2?mal=55528",
+    "verification": "provider-response; playback not individually tested",
+    "servers": {
+      "sub": [
+        {
+          "id": "hd2-cp22ufqdpio0-sub",
+          "name": "HD-2",
+          "embed_url": "https://flixcloud.cc/e/cp22ufqdpio0?v=2",
+          "softsub": false
+        },
+        {
+          "id": "hd1-cp22ufqdpio0-sub",
+          "name": "HD-1",
+          "embed_url": "https://flixcloud.cc/e/cp22ufqdpio0?v=1",
+          "softsub": false
+        }
+      ],
+      "dub": []
+    }
+  },
+  "3": {
+    "verifiedAt": "2026-10-27T13:54:11.645Z",
+    "source": "https://reanime.to/api/flix/165598/3?mal=55528",
+    "verification": "provider-response; playback not individually tested",
+    "servers": {
+      "sub": [
+        {
+          "id": "hd2-jboeb600v526-sub",
+          "name": "HD-2",
+          "embed_url": "https://flixcloud.cc/e/jboeb600v526?v=2",
+          "softsub": false
+        },
+        {
+          "id": "hd1-jboeb600v526-sub",
+          "name": "HD-1",
+          "embed_url": "https://flixcloud.cc/e/jboeb600v526?v=1",
+          "softsub": false
+        }
+      ],
+      "dub": []
+    }
+  },
+  "4": {
+    "verifiedAt": "2026-10-27T13:54:12.820Z",
+    "source": "https://reanime.to/api/flix/165598/4?mal=55528",
+    "verification": "provider-response; playback not individually tested",
+    "servers": {
+      "sub": [
+        {
+          "id": "hd2-lp5a9dvllnhx-sub",
+          "name": "HD-2",
+          "embed_url": "https://flixcloud.cc/e/lp5a9dvllnhx?v=2",
+          "softsub": false
+        },
+        {
+          "id": "hd1-lp5a9dvllnhx-sub",
+          "name": "HD-1",
+          "embed_url": "https://flixcloud.cc/e/lp5a9dvllnhx?v=1",
+          "softsub": false
+        }
+      ],
+      "dub": []
+    }
+  },
+  "5": {
+    "verifiedAt": "2026-10-27T13:54:14.026Z",
+    "source": "https://reanime.to/api/flix/165598/5?mal=55528",
+    "verification": "provider-response; playback not individually tested",
+    "servers": {
+      "sub": [
+        {
+          "id": "hd2-r4hdv130n2bd-sub",
+          "name": "HD-2",
+          "embed_url": "https://flixcloud.cc/e/r4hdv130n2bd?v=2",
+          "softsub": false
+        },
+        {
+          "id": "hd1-r4hdv130n2bd-sub",
+          "name": "HD-1",
+          "embed_url": "https://flixcloud.cc/e/r4hdv130n2bd?v=1",
+          "softsub": false
+        }
+      ],
+      "dub": []
+    }
+  },
+  "6": {
+    "verifiedAt": "2026-10-27T13:54:15.234Z",
+    "source": "https://reanime.to/api/flix/165598/6?mal=55528",
+    "verification": "provider-response; playback not individually tested",
+    "servers": {
+      "sub": [
+        {
+          "id": "hd2-o3h8126a35cc-sub",
+          "name": "HD-2",
+          "embed_url": "https://flixcloud.cc/e/o3h8126a35cc?v=2",
+          "softsub": false
+        },
+        {
+          "id": "hd1-o3h8126a35cc-sub",
+          "name": "HD-1",
+          "embed_url": "https://flixcloud.cc/e/o3h8126a35cc?v=1",
+          "softsub": false
+        }
+      ],
+      "dub": []
+    }
+  }
+}

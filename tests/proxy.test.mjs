@@ -5,6 +5,7 @@ const ctx = { waitUntil(p) { p.catch(() => {}); } };
 test('proxy preserves nested paths and search while stripping client credentials', async () => {
   const original = globalThis.fetch;
   globalThis.fetch = async (url, init) => {
+    if(url.pathname.startsWith('/embeds/'))return new Response('',{status:404});
     assert.equal(url.href, 'https://animegng-api.vercel.app/api/watch/21/2?lang=dub');
     assert.equal(init.headers.Cookie, undefined);
     return Response.json({ available: true });

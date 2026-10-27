@@ -69,3 +69,21 @@ and the browser loads the stored iframe URL directly. `/api/servers/:id/:ep` als
 serves the mapped list locally. Unmapped episodes retain the existing provider flow.
 Embed availability is controlled by the third-party host and is not guaranteed by a
 successful API response. Vercel remains required for metadata.
+
+### Automatic catalog synchronization
+
+Run `node scripts/sync-embeds.mjs` on a machine that can access reanime's public API.
+The default cap is 100 requests per run (hard maximum 200), one request at least
+1.2 seconds apart. `SYNC_MAX_REQUESTS` overrides the cap. The sync prioritizes the
+latest episodes, queues newly listed titles, and paginates older playable titles.
+`.embed-sync-state.json` records the cursor and episode progress. Never run concurrent
+syncs. HTTP errors, rate limits, access blocks and unexpected responses stop the run;
+existing mappings are preserved. No challenge bypass or retries are attempted.
+
+Mappings live in `public/embeds/<anilist-id>.json` and are served as static assets.
+They contain provider-returned HTTPS FlixCloud URLs only; availability is not proof
+that playback has been individually tested. Unknown IDs are skipped, never guessed.
+Rebuild and deploy Cloudflare after updates. A six-hour Codex heartbeat handles this
+while the computer and Codex are available. New releases may take longer if the
+computer is offline, the request budget is exhausted, or upstream access fails.
+Backfill is gradual and full catalog coverage is not guaranteed.
