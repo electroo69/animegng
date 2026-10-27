@@ -4,8 +4,9 @@
 //  - its script can't touch or redirect our page (no allow-top-navigation / allow-same-origin),
 //  - clicks still open the advertiser in a new tab (allow-popups-to-escape-sandbox).
 // Banners load only when scrolled near, so they don't slow down the first paint or the player.
-// Adsterra only fills requests from the registered domain (animegng.pages.dev); on localhost the
-// slots stay empty.
+// The banner page is public/ad.html on our own domain: Adsterra only fills requests whose referrer
+// is the registered site (animegng.pages.dev), which an inline srcdoc frame doesn't send.
+// On localhost the slots stay empty.
 import { useEffect, useRef, useState } from "react"
 import { cn } from "@/lib/utils"
 
@@ -19,13 +20,6 @@ const UNITS = {
 } as const
 
 export type AdSize = keyof typeof UNITS
-
-const doc = (key: string, w: number, h: number) => `<!doctype html><html><head><meta charset="utf-8">
-<meta name="color-scheme" content="dark light">
-<style>html,body{margin:0;padding:0;background:transparent;overflow:hidden}</style></head><body>
-<script>atOptions={'key':'${key}','format':'iframe','height':${h},'width':${w},'params':{}};</script>
-<script src="https://bauval.org/22/${key}"></script>
-</body></html>`
 
 export function AdSlot({ size, className }: { size: AdSize; className?: string }) {
   const { key, w, h } = UNITS[size]
@@ -55,7 +49,7 @@ export function AdSlot({ size, className }: { size: AdSize; className?: string }
         {show && (
           <iframe
             title="Advertisement"
-            srcDoc={doc(key, w, h)}
+            src={`/ad.html?k=${key}&w=${w}&h=${h}`}
             width={w}
             height={h}
             loading="lazy"
