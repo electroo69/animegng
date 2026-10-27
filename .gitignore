@@ -30,3 +30,7 @@ dist-ssr
 .vercel
 
 .vercel
+
+# Local catalog importer lock
+.embed-sync.lock
+.embed-backfill.lock

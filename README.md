@@ -72,18 +72,33 @@ successful API response. Vercel remains required for metadata.
 
 ### Automatic catalog synchronization
 
-Run `node scripts/sync-embeds.mjs` on a machine that can access reanime's public API.
-The default cap is 100 requests per run (hard maximum 200), one request at least
-1.2 seconds apart. `SYNC_MAX_REQUESTS` overrides the cap. The sync prioritizes the
-latest episodes, queues newly listed titles, and paginates older playable titles.
-`.embed-sync-state.json` records the cursor and episode progress. Never run concurrent
-syncs. HTTP errors, rate limits, access blocks and unexpected responses stop the run;
-existing mappings are preserved. No challenge bypass or retries are attempted.
+Run `node scripts/backfill-catalog.mjs` for the full import. It enumerates every
+public catalog page before backfilling episodes, rotating between titles so a long
+series cannot monopolize the import. The source currently reports 20,811 catalog
+entries; this is not a count of playable titles. Titles without an explicit AniList
+ID or episode count are recorded as skipped, and empty server lists never create
+fake playback links.
 
-Mappings live in `public/embeds/<anilist-id>.json` and are served as static assets.
-They contain provider-returned HTTPS FlixCloud URLs only; availability is not proof
-that playback has been individually tested. Unknown IDs are skipped, never guessed.
-Rebuild and deploy Cloudflare after updates. A six-hour Codex heartbeat handles this
-while the computer and Codex are available. New releases may take longer if the
-computer is offline, the request budget is exhausted, or upstream access fails.
-Backfill is gradual and full catalog coverage is not guaranteed.
+The runner continues in 200-request batches, at least 1.2 seconds between requests.
+It publishes the first changed batch and subsequent changes at most once an hour to
+the existing Cloudflare Pages project and Worker. Build/deployment errors, source
+code edits, HTTP errors, blocks, and invalid data stop it for review. It never
+retries access blocks. Keep the computer awake and online during the import.
+Progress is in `.wrangler/backfill-status.json`; output goes to the launcher's logs.
+
+`.embed-catalog.json` records the discovered titles and pagination cursor;
+`.embed-sync-state.json` records the round-robin queue, completed and skipped titles,
+and recent attempts. Checkpoints are saved every 20 processed jobs and on normal
+exit; mappings are saved immediately. Lock files prevent simultaneous writers.
+After a hard crash, confirm the recorded PID is no longer running before removing
+a stale lock. Never remove a live process's lock.
+
+`node scripts/sync-embeds.mjs --catalog-only` discovers catalog pages without fetching
+video links. Without that option, the script prioritizes recent episodes and
+continues the backfill. Its default request cap is 100; `SYNC_MAX_REQUESTS` can raise
+it to 200. The six-hour Codex heartbeat monitors the full import and handles new
+releases after it finishes; it must never overlap the background runner.
+
+Mappings live in `public/embeds/<anilist-id>.json` as static assets. They contain only
+provider-returned HTTPS FlixCloud URLs. A successful response is not an individual
+playback test. Full catalog discovery does not imply full playable coverage.
