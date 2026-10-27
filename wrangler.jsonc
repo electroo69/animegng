@@ -7,6 +7,6 @@
     "directory": "./dist",
     "binding": "ASSETS",
     "not_found_handling": "single-page-application",
-    "run_worker_first": ["/api/*", "/api"]
+    "run_worker_first": ["/api/*", "/api", "/", "/anime/*", "/watch/*", "/browse/*", "/genre/*", "/season/*", "/schedule", "/search", "/robots.txt", "/llms.txt", "/sitemap*"]
   }
 }

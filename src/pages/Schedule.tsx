@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react"
+import { SITE_NAME, useHead } from "@/lib/seo"
+import { animeHref } from "@/lib/seo"
 import { Link } from "react-router-dom"
 import { ChevronLeft, ChevronRight, Clock, Play } from "lucide-react"
 import { Container } from "@/components/Section"
@@ -9,6 +11,7 @@ import { countdown, formatLabel, titleOf } from "@/lib/format"
 import { cn } from "@/lib/utils"
 
 export default function Schedule() {
+  useHead({ title: `Anime Airing Schedule | ${SITE_NAME}`, description: "This week’s anime release schedule with air times in your timezone and countdowns to every new episode.", path: "/schedule" })
   const [week, setWeek] = useState(0)
   const { data, isLoading, isFetching } = useSchedule(week)
   const today = new Date().toLocaleDateString("en-CA")
@@ -90,7 +93,7 @@ export default function Schedule() {
                     <span className={cn("w-14 shrink-0 text-right font-mono text-sm font-semibold sm:w-[4.5rem]", aired ? "text-white/35" : "text-white")}>{e.local_time}</span>
                     <span className={cn("relative z-10 size-2.5 shrink-0 rounded-full ring-4 ring-background", aired ? "bg-white/25" : "bg-primary")} />
                     <Link
-                      to={aired ? `/watch/${e.anime.id}/${e.episode}` : `/anime/${e.anime.id}`}
+                      to={aired ? `/watch/${e.anime.id}/${e.episode}` : animeHref(e.anime)}
                       className="group flex min-w-0 flex-1 items-center gap-4 rounded-2xl border border-white/[0.06] bg-white/[0.02] p-2.5 pr-4 transition hover:border-white/15 hover:bg-white/[0.04]"
                     >
                       <img src={e.anime.cover_image.large} alt="" loading="lazy" className="h-16 w-12 shrink-0 rounded-lg object-cover" />

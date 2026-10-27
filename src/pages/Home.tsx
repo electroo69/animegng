@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom"
+import { genreHref, SITE_NAME, useHead } from "@/lib/seo"
 import { AdSlot, LeaderboardAd } from "@/components/AdSlot"
 import { WatchLink } from "@/components/WatchLink"
 import { CalendarDays, Play, X } from "lucide-react"
@@ -17,6 +18,11 @@ import { removeHistory, useHistory } from "@/lib/progress"
 const GENRES = ["Action", "Adventure", "Comedy", "Drama", "Fantasy", "Horror", "Mecha", "Music", "Mystery", "Psychological", "Romance", "Sci-Fi", "Slice of Life", "Sports", "Supernatural", "Thriller", "Mahou Shoujo"]
 
 export default function Home() {
+  useHead({
+    title: `${SITE_NAME} — Watch Anime Online Free in HD (Sub & Dub)`,
+    description: "Watch anime online free in HD with English sub and dub. Browse trending, seasonal and top-rated anime, episode guides and the weekly airing schedule on AnimeGang.",
+    path: "/",
+  })
   const { data, isLoading, error } = useHome()
 
   return (
@@ -28,7 +34,7 @@ export default function Home() {
           {GENRES.map((g) => (
             <Link
               key={g}
-              to={`/search?genre=${encodeURIComponent(g)}`}
+              to={genreHref(g)}
               className="rounded-full border border-white/10 bg-white/[0.03] px-4 py-1.5 text-[13px] font-medium whitespace-nowrap text-white/60 transition hover:border-primary/50 hover:bg-primary/10 hover:text-white"
             >
               {g}

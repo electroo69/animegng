@@ -1,9 +1,11 @@
 import { Link } from "react-router-dom"
+import { SITE_NAME, useHead } from "@/lib/seo"
 import { Home } from "lucide-react"
 import { HyperText } from "@/components/ui/hyper-text"
 import { Ripple } from "@/components/ui/ripple"
 
 export default function NotFound({ message = "This page wandered off into another isekai." }: { message?: string }) {
+  useHead({ title: `Page not found | ${SITE_NAME}`, noindex: true })
   return (
     <div className="relative grid min-h-[80vh] place-items-center overflow-hidden px-4 pt-16">
       <Ripple mainCircleSize={260} numCircles={7} />

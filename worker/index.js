@@ -1,13 +1,15 @@
-// Worker entry: /api/* is the anime API, everything else is the built site in dist/
-// (unknown paths fall back to index.html via not_found_handling in wrangler.jsonc).
+// Worker entry: /api/* is the anime API; page routes, robots/llms/sitemaps get edge SEO
+// (seo.js); everything else is the built site in dist/ (SPA fallback via wrangler.jsonc).
 import { proxyApi } from './proxy.js';
+import { handleSeo } from './seo.js';
 
 export default {
-  fetch(request, env, ctx) {
+  async fetch(request, env, ctx) {
     const url = new URL(request.url);
     if (url.pathname === '/api' || url.pathname.startsWith('/api/')) {
       return proxyApi(request, env, ctx);
     }
-    return env.ASSETS.fetch(request);
+    const seo = await handleSeo(request, env, ctx, () => env.ASSETS.fetch(new URL('/', request.url)));
+    return seo ?? env.ASSETS.fetch(request);
   },
 };

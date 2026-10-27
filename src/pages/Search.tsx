@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react"
+import { SITE_NAME, useHead } from "@/lib/seo"
 import { LeaderboardAd, withNativeAds } from "@/components/AdSlot"
 import { useSearchParams } from "react-router-dom"
 import { useInfiniteQuery } from "@tanstack/react-query"
@@ -37,6 +38,8 @@ const PAGE = 30
 
 export default function Search() {
   const [sp, setSp] = useSearchParams()
+  // Filtered result pages would duplicate the genre/season landing pages: keep them out of the index.
+  useHead({ title: `Browse & Search Anime | ${SITE_NAME}`, description: "Search thousands of anime by title, genre, format, season, year and status.", path: "/search", noindex: sp.toString().length > 0 })
   const [text, setText] = useState(sp.get("q") ?? "")
   const [showFilters, setShowFilters] = useState(true)
   const facets = useFacets()

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react"
+import { animeHref } from "@/lib/seo"
 import { WatchLink } from "@/components/WatchLink"
 import { Link } from "react-router-dom"
 import { AnimatePresence, motion } from "motion/react"
@@ -113,7 +114,7 @@ export function HeroSpotlight({ items }: { items: AnimeCard[] }) {
                 </ShimmerButton>
               </WatchLink>
               <Link
-                to={`/anime/${cur.id}`}
+                to={animeHref(cur)}
                 className="flex h-12 items-center gap-2 rounded-[14px] border border-white/15 bg-white/[0.06] px-6 text-[15px] font-semibold text-white backdrop-blur-md transition hover:border-white/30 hover:bg-white/[0.12]"
               >
                 <Info className="size-4" />

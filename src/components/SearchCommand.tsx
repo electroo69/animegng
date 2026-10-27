@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react"
+import { animeHref } from "@/lib/seo"
 import { useNavigate } from "react-router-dom"
 import { ArrowRight, Loader2, Search, Star } from "lucide-react"
 import { Command, CommandDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
@@ -47,7 +48,7 @@ export function SearchCommand({ open, onOpenChange }: { open: boolean; onOpenCha
           {dq.length > 1 && !isFetching && <CommandEmpty>No anime found for “{dq}”.</CommandEmpty>}
           <CommandGroup heading={dq.length > 1 ? "Results" : "Trending now"}>
             {items.map((a) => (
-              <CommandItem key={a.id} value={String(a.id)} onSelect={() => go(`/anime/${a.id}`)} className="gap-3 py-2">
+              <CommandItem key={a.id} value={String(a.id)} onSelect={() => go(animeHref(a))} className="gap-3 py-2">
                 <img src={a.cover_image.medium} alt="" className="h-14 w-10 shrink-0 rounded-md object-cover" loading="lazy" />
                 <div className="min-w-0 flex-1">
                   <div className="truncate font-medium">{titleOf(a.title)}</div>

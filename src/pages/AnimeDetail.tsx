@@ -1,4 +1,5 @@
 import { useState } from "react"
+import { animeHref, clip, genreHref, GENRES, SITE_NAME, useHead } from "@/lib/seo"
 import { LeaderboardAd } from "@/components/AdSlot"
 import { WatchLink } from "@/components/WatchLink"
 import { Link, useParams } from "react-router-dom"
@@ -28,6 +29,13 @@ export default function AnimeDetail() {
   const [tab, setTab] = useState<(typeof TABS)[number]>("Episodes")
   const [trailer, setTrailer] = useState(false)
   const [more, setMore] = useState(false)
+  const eps0 = episodes.data?.total ?? (a ? availableEpisodes(a) : 0)
+  useHead({
+    title: a ? `${titleOf(a.title)} — Watch Online Free (Sub & Dub) | ${SITE_NAME}` : undefined,
+    description: a ? clip(`Watch ${titleOf(a.title)} online free in HD${eps0 ? `, all ${eps0} episodes` : ""}, English sub and dub. ${stripHtml(a.description)}`) : undefined,
+    path: a ? animeHref(a) : undefined,
+    image: a?.banner_image ?? a?.cover_image.extra_large,
+  })
 
   if (error) return <NotFound message="We couldn't find that anime." />
   if (isLoading || !a) return <DetailSkeleton />
@@ -80,7 +88,7 @@ export default function AnimeDetail() {
 
               <div className="mt-4 flex flex-wrap justify-center gap-1.5 md:justify-start">
                 {a.genres.map((g) => (
-                  <Link key={g} to={`/search?genre=${encodeURIComponent(g)}`} className="rounded-full border border-white/10 px-3 py-1 text-xs text-white/65 transition hover:border-primary/50 hover:text-white">
+                  <Link key={g} to={GENRES.includes(g) ? genreHref(g) : `/search?genre=${encodeURIComponent(g)}`} className="rounded-full border border-white/10 px-3 py-1 text-xs text-white/65 transition hover:border-primary/50 hover:text-white">
                     {g}
                   </Link>
                 ))}
@@ -121,8 +129,13 @@ export default function AnimeDetail() {
             {rated ? <Stat icon={Award} label="Highest rated all time" value={rated.rank} prefix="#" color="#a78bfa" /> : <Stat icon={TrendingUp} label="Most popular all time" value={popular?.rank ?? 0} prefix="#" color="#a78bfa" />}
           </BlurFade>
 
+          <BlurFade delay={0.22} className="mt-8 max-w-4xl">
+            <h2 className="sr-only">Quick facts</h2>
+            <p className="text-sm leading-relaxed text-white/50">{quickFacts(a, eps)}</p>
+          </BlurFade>
+
           {desc && (
-            <BlurFade delay={0.25} className="mt-8 max-w-4xl">
+            <BlurFade delay={0.25} className="mt-4 max-w-4xl">
               <p className={cn("text-[15px] leading-relaxed whitespace-pre-line text-white/65", !more && "line-clamp-4")}>{desc}</p>
               {desc.length > 380 && (
                 <button onClick={() => setMore(!more)} className="mt-2 text-sm font-medium text-primary hover:underline">
@@ -186,6 +199,24 @@ export default function AnimeDetail() {
       </Dialog>
     </>
   )
+}
+
+// One self-contained factual summary (format, studio, premiere, status, episodes, next air date,
+// genres, score) that answers common questions and is easy for search/AI answers to quote.
+function quickFacts(a: Detail, total: number) {
+  const t = titleOf(a.title)
+  const kind = ({ TV: "TV series", TV_SHORT: "TV short", MOVIE: "movie", SPECIAL: "special", MUSIC: "music video" } as Record<string, string>)[a.format ?? ""] ?? (formatLabel(a.format) || "anime")
+  const studio = a.studios.find((s) => s.is_main)?.name
+  const next = a.next_airing_episode
+  return [
+    `${t} is ${/^[aeiou]/i.test(kind) ? "an" : "a"} ${kind}${studio ? ` by ${studio}` : ""}${a.season && a.season_year ? ` that premiered in ${cap(a.season)} ${a.season_year}` : ""}.`,
+    a.status ? `It is ${statusLabel(a.status).toLowerCase()}${a.episodes ? ` with ${a.episodes} episodes` : total ? ` with ${total} episodes out so far` : ""}${a.duration ? ` of about ${a.duration} minutes each` : ""}.` : "",
+    next ? `Episode ${next.episode} airs on ${new Date(next.airing_at).toLocaleDateString(undefined, { dateStyle: "long" })}.` : "",
+    a.genres.length ? `Genres: ${a.genres.join(", ")}.` : "",
+    a.average_score ? `Average AniList score: ${(a.average_score / 10).toFixed(1)}/10.` : "",
+  ]
+    .filter(Boolean)
+    .join(" ")
 }
 
 function Stat({ icon: Icon, label, value, decimals = 0, prefix, suffix, color }: { icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>; label: string; value: number; decimals?: number; prefix?: string; suffix?: string; color: string }) {

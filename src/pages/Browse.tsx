@@ -1,4 +1,5 @@
 import { useParams } from "react-router-dom"
+import { SITE_NAME, useHead } from "@/lib/seo"
 import { LeaderboardAd, withNativeAds } from "@/components/AdSlot"
 import { useInfiniteQuery } from "@tanstack/react-query"
 import { Loader2 } from "lucide-react"
@@ -8,14 +9,15 @@ import { BlurFade } from "@/components/ui/blur-fade"
 import { api, type AiredItem, type AnimeCard as Card, type Paged } from "@/lib/api"
 import NotFound from "./NotFound"
 
-const KINDS: Record<string, { title: string; eyebrow: string }> = {
-  trending: { title: "Trending Now", eyebrow: "What everyone's watching" },
-  popular: { title: "Most Popular", eyebrow: "All-time favourites" },
-  top: { title: "Top Rated", eyebrow: "Hall of fame" },
-  upcoming: { title: "Upcoming", eyebrow: "Coming soon" },
-  seasonal: { title: "This Season", eyebrow: "Currently airing" },
-  airing: { title: "Airing Now", eyebrow: "On air" },
-  latest: { title: "Latest Episodes", eyebrow: "Fresh drops" },
+// seo: page title and description, matching worker/seo.js.
+const KINDS: Record<string, { title: string; eyebrow: string; seo: [string, string] }> = {
+  trending: { title: "Trending Now", eyebrow: "What everyone's watching", seo: ["Trending Anime", "The anime everyone is watching right now, updated daily from AniList trends."] },
+  popular: { title: "Most Popular", eyebrow: "All-time favourites", seo: ["Most Popular Anime of All Time", "The most-watched anime ever, ranked by AniList members."] },
+  top: { title: "Top Rated", eyebrow: "Hall of fame", seo: ["Top Rated Anime of All Time", "The highest-rated anime of all time, ranked by average AniList score."] },
+  upcoming: { title: "Upcoming", eyebrow: "Coming soon", seo: ["Upcoming Anime", "The most anticipated anime that have not started airing yet."] },
+  seasonal: { title: "This Season", eyebrow: "Currently airing", seo: ["Anime Airing This Season", "Every anime airing this season, sorted by popularity."] },
+  airing: { title: "Airing Now", eyebrow: "On air", seo: ["Currently Airing Anime", "Anime with new episodes airing every week."] },
+  latest: { title: "Latest Episodes", eyebrow: "Fresh drops", seo: ["Latest Anime Episodes", "The newest anime episodes released, updated as they air."] },
 }
 
 export default function Browse() {
@@ -30,6 +32,7 @@ export default function Browse() {
     enabled: !!meta,
     staleTime: 10 * 60_000,
   })
+  useHead({ title: meta ? `${meta.seo[0]} | ${SITE_NAME}` : undefined, description: meta ? `${meta.seo[1]} Watch free in HD with sub and dub on ${SITE_NAME}.` : undefined, path: `/browse/${kind}` })
   if (!meta) return <NotFound />
   const items = q.data?.pages.flatMap((p) => p.results) ?? []
 

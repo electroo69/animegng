@@ -1,4 +1,5 @@
 import { useState } from "react"
+import { animeHref } from "@/lib/seo"
 import { WatchLink } from "@/components/WatchLink"
 import { Link } from "react-router-dom"
 import { Captions, Clock, Play, Star } from "lucide-react"
@@ -15,7 +16,7 @@ export function AnimeCard({ anime, rank, className }: { anime: Card; rank?: numb
   const eps = availableEpisodes(anime)
   return (
     <Link
-      to={`/anime/${anime.id}`}
+      to={animeHref(anime)}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
       className={cn("group/card block outline-none", className)}

@@ -1,4 +1,5 @@
 import { useState } from "react"
+import { animeHref } from "@/lib/seo"
 import { Link } from "react-router-dom"
 import { Clock, Radio, Star } from "lucide-react"
 import { useList, useSchedule, type AnimeCard } from "@/lib/api"
@@ -48,7 +49,7 @@ function TopRow({ anime, rank }: { anime: AnimeCard; rank: number }) {
   const top3 = rank <= 3
   return (
     <li>
-      <Link to={`/anime/${anime.id}`} className="group flex items-center gap-3 rounded-xl p-1.5 transition hover:bg-white/[0.04]">
+      <Link to={animeHref(anime)} className="group flex items-center gap-3 rounded-xl p-1.5 transition hover:bg-white/[0.04]">
         <span
           className={cn(
             "w-8 shrink-0 text-center font-mono text-2xl font-black italic",
@@ -97,7 +98,7 @@ export function AiringToday() {
           {items.map((e) => (
             <li key={`${e.anime.id}-${e.episode}`}>
               <Link
-                to={e.aired ? `/watch/${e.anime.id}/${e.episode}` : `/anime/${e.anime.id}`}
+                to={e.aired ? `/watch/${e.anime.id}/${e.episode}` : animeHref(e.anime)}
                 className="group flex items-center gap-3 rounded-xl p-1.5 transition hover:bg-white/[0.04]"
               >
                 <span className={cn("w-12 shrink-0 font-mono text-[13px] font-semibold", e.aired ? "text-white/35" : "text-white")}>{e.local_time}</span>

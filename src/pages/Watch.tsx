@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react"
+import { animeHref, clip, SITE_NAME, useHead } from "@/lib/seo"
 import { LeaderboardAd } from "@/components/AdSlot"
 import { Link, useNavigate, useParams } from "react-router-dom"
 import { AlertTriangle, Captions, ChevronLeft, ChevronRight, Clock, Lightbulb, Loader2, Mic, Search, Server as ServerIcon, Star } from "lucide-react"
@@ -127,12 +128,13 @@ export default function Watch() {
   const a = anime.data ?? fresh?.anime
   const title = a ? titleOf(a.title) : ""
 
-  useEffect(() => {
-    if (title) document.title = `${title} · Episode ${ep} — AnimeGang`
-    return () => {
-      document.title = "AnimeGang — Watch Anime Free in HD"
-    }
-  }, [title, ep])
+  const epTitle = current?.title && !/^Episode \d+$/.test(current.title) ? current.title : ""
+  useHead({
+    title: title ? `${title} Episode ${ep}${epTitle ? ` — ${epTitle}` : ""} | Watch Free | ${SITE_NAME}` : undefined,
+    description: title ? clip(`Watch ${title} episode ${ep}${epTitle ? ` "${epTitle}"` : ""} online free in HD with English sub and dub. ${current?.description || stripHtml(anime.data?.description)}`) : undefined,
+    path: `/watch/${id}/${ep}`,
+    image: current?.thumbnail ?? a?.banner_image,
+  })
 
   return (
     <div className="pt-20">
@@ -141,7 +143,7 @@ export default function Watch() {
         <nav className="relative z-10 mb-4 flex items-center gap-2 text-[13px] text-white/45">
           <Link to="/" className="hover:text-white">Home</Link>
           <ChevronRight className="size-3.5" />
-          {a ? <Link to={`/anime/${id}`} className="max-w-[40vw] truncate hover:text-white">{title}</Link> : <span className="h-3 w-24 animate-pulse rounded bg-white/10" />}
+          {a ? <Link to={a ? animeHref(a) : `/anime/${id}`} className="max-w-[40vw] truncate hover:text-white">{title}</Link> : <span className="h-3 w-24 animate-pulse rounded bg-white/10" />}
           <ChevronRight className="size-3.5" />
           <span className="text-white/80">Episode {ep}</span>
         </nav>
@@ -256,7 +258,7 @@ export default function Watch() {
             {/* Episode + anime info */}
             <div className="mt-6 flex flex-col gap-5 sm:flex-row">
               {a && (
-                <Link to={`/anime/${id}`} className="w-28 shrink-0 self-start">
+                <Link to={a ? animeHref(a) : `/anime/${id}`} className="w-28 shrink-0 self-start">
                   <img src={a.cover_image.extra_large} alt="" className="aspect-[2/3] w-full rounded-xl object-cover ring-1 ring-white/10" />
                 </Link>
               )}
