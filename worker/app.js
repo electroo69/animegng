@@ -1,5 +1,5 @@
 // The anime API (AniList + ani.zip + Jikan, plus reanime's /api/flix for video servers) as a
-// Cloudflare Pages Function. Ported from "api without reanime/server.js": same routes and shapes,
+// Cloudflare Worker (see worker/index.js). Ported from "api without reanime/server.js": same routes and shapes,
 // served under /api on the site's own domain.
 import * as src from './sources.js';
 
