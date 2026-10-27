@@ -16,9 +16,8 @@
         var w = Number(q.get("w")), h = Number(q.get("h"))
         if (!/^[a-f0-9]{32}$/.test(key) || !(w > 0 && w <= 1000) || !(h > 0 && h <= 1000)) return
         window.atOptions = { key: key, format: "iframe", height: h, width: w, params: {} }
-        var s = document.createElement("script")
-        s.src = "https://bauval.org/22/" + key
-        document.body.appendChild(s)
+        // Written during parsing (not appended later): the banner script uses document.write.
+        document.write('<script src="https://bauval.org/22/' + key + '"><\/script>')
       })()
     </script>
   </body>
