@@ -1,0 +1,35 @@
+<!doctype html>
+<!-- One Adsterra native ad, loaded by NativeAdTile inside a sandboxed iframe (see AdSlot.tsx for why
+     ads live on their own page on our domain). Reports its content height to the parent so the tile
+     can size itself. -->
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="color-scheme" content="dark light" />
+    <meta name="robots" content="noindex" />
+    <style>
+      html, body { margin: 0; padding: 0; background: transparent; color: #f4f4f6; font-family: system-ui, sans-serif; overflow: hidden; }
+    </style>
+  </head>
+  <body>
+    <script>
+      (function () {
+        var key = new URLSearchParams(location.search).get("k") || ""
+        if (!/^[a-f0-9]{32}$/.test(key)) return
+        var box = document.createElement("div")
+        box.id = "container-" + key
+        document.body.appendChild(box)
+        var s = document.createElement("script")
+        s.async = true
+        s.setAttribute("data-cfasync", "false")
+        s.src = "https://bauval.org/21/" + key
+        document.body.appendChild(s)
+        if (parent !== window && "ResizeObserver" in window) {
+          new ResizeObserver(function () {
+            parent.postMessage({ type: "ag-native-size", key: key, height: document.body.scrollHeight }, "*")
+          }).observe(document.body)
+        }
+      })()
+    </script>
+  </body>
+</html>
