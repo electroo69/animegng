@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react"
+import { withNativeAds } from "@/components/AdSlot"
 import { WatchLink } from "@/components/WatchLink"
 import { LayoutGrid, List, Play, Search, Star } from "lucide-react"
 import type { Episode } from "@/lib/api"
@@ -55,7 +56,7 @@ export function EpisodeGrid({ animeId, episodes, total, fallbackImage }: { anime
 
       {view === "grid" ? (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
-          {shown.map((e) => (
+          {withNativeAds(shown.map((e) => (
             <WatchLink key={e.episode_number} to={`/watch/${animeId}/${e.episode_number}`} className="group/e block">
               <div className="relative aspect-video overflow-hidden rounded-xl bg-white/[0.04] ring-1 ring-white/[0.07]">
                 {(e.thumbnail || fallbackImage) && (
@@ -82,7 +83,7 @@ export function EpisodeGrid({ animeId, episodes, total, fallbackImage }: { anime
                 ) : null}
               </p>
             </WatchLink>
-          ))}
+          )))}
         </div>
       ) : (
         <div className="divide-y divide-white/[0.05] overflow-hidden rounded-xl border border-white/[0.07]">

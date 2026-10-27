@@ -72,3 +72,76 @@ export function LeaderboardAd({ className }: { className?: string }) {
     </div>
   )
 }
+
+const NATIVE_KEY = "c29eedb2f49730f7595851c39d51314d" // NativeBanner_1, 1:1 layout
+
+// A native ad laid out as one card in a content grid. It loads lazily like the banners and
+// sizes itself to the ad's height, which native.html reports via postMessage.
+export function NativeAdTile({ className }: { className?: string }) {
+  const box = useRef<HTMLDivElement>(null)
+  const frame = useRef<HTMLIFrameElement>(null)
+  const [show, setShow] = useState(false)
+  const [height, setHeight] = useState(0)
+
+  useEffect(() => {
+    const el = box.current
+    if (!el || show) return
+    const io = new IntersectionObserver(
+      ([e]) => {
+        if (e.isIntersecting) {
+          setShow(true)
+          io.disconnect()
+        }
+      },
+      { rootMargin: "300px" },
+    )
+    io.observe(el)
+    return () => io.disconnect()
+  }, [show])
+
+  useEffect(() => {
+    const onMsg = (e: MessageEvent) => {
+      if (e.source !== frame.current?.contentWindow || e.data?.type !== "ag-native-size") return
+      setHeight(Math.min(800, Math.max(0, Number(e.data.height) || 0)))
+    }
+    window.addEventListener("message", onMsg)
+    return () => window.removeEventListener("message", onMsg)
+  }, [])
+
+  // Until the ad reports content it sits out of the grid flow, invisible, so an unfilled ad
+  // never leaves an empty cell.
+  return (
+    <div ref={box} className={cn("min-w-0", height ? "" : "pointer-events-none absolute -z-10 w-48 opacity-0", className)}>
+      <div className="overflow-hidden rounded-xl border border-white/[0.07] bg-white/[0.02] p-2">
+        <p className="mb-1.5 px-0.5 text-[10px] tracking-widest text-white/30 uppercase">Sponsored</p>
+        {show && (
+          <iframe
+            ref={frame}
+            title="Sponsored"
+            src={`/native.html?k=${NATIVE_KEY}`}
+            loading="lazy"
+            scrolling="no"
+            sandbox="allow-scripts allow-popups allow-popups-to-escape-sandbox"
+            className="block w-full border-0"
+            style={{ height }}
+          />
+        )}
+      </div>
+    </div>
+  )
+}
+
+// Interleave a native ad tile into a grid's items: first after `first` items, then every `every`.
+export function withNativeAds(nodes: React.ReactNode[], first = 12, every = 24, max = 3) {
+  const out: React.ReactNode[] = []
+  let ads = 0
+  nodes.forEach((node, i) => {
+    out.push(node)
+    const n = i + 1
+    if (ads < max && n >= first && (n - first) % every === 0 && n < nodes.length) {
+      out.push(<NativeAdTile key={`native-ad-${n}`} />)
+      ads++
+    }
+  })
+  return out
+}

@@ -9,6 +9,10 @@
     <meta name="robots" content="noindex" />
     <style>
       html, body { margin: 0; padding: 0; background: transparent; color: #f4f4f6; font-family: system-ui, sans-serif; overflow: hidden; }
+      /* Make Adsterra's native markup read like our cards: full-width image, light text, no underlines. */
+      [id^="container-"] img { width: 100% !important; height: auto !important; border-radius: 10px; display: block; }
+      [id^="container-"] a { color: #f4f4f6 !important; text-decoration: none !important; }
+      [id^="container-"] * { font-family: inherit !important; max-width: 100% !important; box-sizing: border-box; }
     </style>
   </head>
   <body>

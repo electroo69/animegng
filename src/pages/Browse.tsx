@@ -1,5 +1,5 @@
 import { useParams } from "react-router-dom"
-import { LeaderboardAd } from "@/components/AdSlot"
+import { LeaderboardAd, withNativeAds } from "@/components/AdSlot"
 import { useInfiniteQuery } from "@tanstack/react-query"
 import { Loader2 } from "lucide-react"
 import { AnimeCard, CardSkeleton, EpisodeCard } from "@/components/AnimeCard"
@@ -46,7 +46,7 @@ export default function Browse() {
           </div>
         ) : (
           <div className="mt-8 grid grid-cols-2 gap-x-4 gap-y-7 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7">
-            {q.isLoading ? Array.from({ length: 18 }, (_, n) => <CardSkeleton key={n} />) : (items as Card[]).map((a, n) => <AnimeCard key={a.id} anime={a} rank={kind === "top" || kind === "trending" ? n + 1 : undefined} />)}
+            {q.isLoading ? Array.from({ length: 18 }, (_, n) => <CardSkeleton key={n} />) : withNativeAds((items as Card[]).map((a, n) => <AnimeCard key={a.id} anime={a} rank={kind === "top" || kind === "trending" ? n + 1 : undefined} />))}
           </div>
         )}
         <LeaderboardAd className="mt-12" />
