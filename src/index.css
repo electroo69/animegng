@@ -248,3 +248,20 @@
   .no-scrollbar::-webkit-scrollbar { display: none; }
   .slash-clip { clip-path: polygon(10px 0, 100% 0, calc(100% - 10px) 100%, 0 100%); }
 }
+
+/* Subtitles in the direct-stream player. */
+video::cue {
+  background: rgb(0 0 0 / 0.55);
+  color: #fff;
+  font-family: var(--font-sans);
+  font-size: 1.05em;
+  line-height: 1.35;
+}
+
+/* Lift subtitles above the control bar while it's visible (Chromium/WebKit). */
+video::-webkit-media-text-track-container {
+  transition: transform 0.3s;
+}
+.player-ui-on video::-webkit-media-text-track-container {
+  transform: translateY(-64px);
+}
