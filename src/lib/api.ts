@@ -153,8 +153,11 @@ export class ApiError extends Error {
   }
 }
 
+// Dev: Vite proxies /api to the local server. Production: set VITE_API_URL at build time.
+const API_BASE = (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/$/, "") || "/api"
+
 export async function api<T>(path: string): Promise<T> {
-  const res = await fetch(`/api${path}`)
+  const res = await fetch(`${API_BASE}${path}`)
   if (!res.ok) {
     const body = await res.json().catch(() => ({}))
     throw new ApiError(res.status, body.error || res.statusText)
