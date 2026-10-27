@@ -30,13 +30,12 @@ const mapping = (id) => cached(`anizip:${id}`, 60 * MIN, () => src.anizip(id));
 
 // Jikan filler/recap flags load in the background so a slow Jikan never blocks a response.
 const fillerFlags = new Map(); // malId -> flags object, once loaded
-let waitUntil = (p) => p; // set per request by handle()
-function flagsFor(malId) {
+function flagsFor(malId, ctx) {
   if (!malId) return null;
   if (fillerFlags.has(malId)) return fillerFlags.get(malId);
   fillerFlags.set(malId, null);
   // Workers cancel unawaited work once the response is sent, so keep the isolate alive for it.
-  waitUntil(src.jikanFlags(malId).then((f) => {
+  ctx.waitUntil(src.jikanFlags(malId).then((f) => {
     if (Object.keys(f).length) fillerFlags.set(malId, f);
     else fillerFlags.delete(malId); // retry on a later request
   }));
@@ -44,14 +43,14 @@ function flagsFor(malId) {
 }
 
 /** Merged episode list: ani.zip (titles, stills, synopsis) + Jikan (filler/recap) + AniList (counts). */
-async function episodes(id) {
+async function episodes(id, ctx) {
   const key = `episodes:${id}`;
   // Rebuild once filler flags arrive, so they show up without waiting for the TTL.
   const hit = cache.get(key);
   if (hit?.value && !hit.value.sources.filler && fillerFlags.get(hit.value.mal_id)) cache.delete(key);
   return cached(key, 30 * MIN, async () => {
     const [a, z] = await Promise.all([detail(id), mapping(id).catch(() => null)]);
-    const flags = flagsFor(a.mal_id) ?? {};
+    const flags = flagsFor(a.mal_id, ctx) ?? {};
     const zeps = z?.episodes ?? {};
     // How many episodes exist so far: aired count for airing shows, total otherwise.
     const aired = a.next_airing_episode ? a.next_airing_episode.episode - 1 : null;
@@ -114,10 +113,16 @@ function embedUrl(server, { autoPlay = true, skipIntro = false, skipOutro = fals
   return u.toString();
 }
 
-async function watch(id, ep) {
-  const [a, eps] = await Promise.all([detail(id), episodes(id)]);
+async function watch(id, ep, ctx) {
+  const [a, eps] = await Promise.all([detail(id), episodes(id, ctx)]);
   const episode = eps.data.find((e) => e.episode_number === ep) ?? { episode_number: ep };
-  const srv = await servers(a.id, ep, a.mal_id);
+  let srv = { sub: [], dub: [] };
+  let serverError = null;
+  try { srv = await servers(a.id, ep, a.mal_id); }
+  catch (error) {
+    console.error(JSON.stringify({ event: 'video_provider_error', id, ep, message: error.message }));
+    serverError = 'The video provider is temporarily unavailable. Please try again later.';
+  }
   return {
     anime: { id: a.id, mal_id: a.mal_id, title: a.title, cover_image: a.cover_image, banner_image: a.banner_image, format: a.format, episodes: eps.total },
     episode,
@@ -125,6 +130,7 @@ async function watch(id, ep) {
     next_episode: ep < eps.total ? ep + 1 : null,
     available: srv.sub.length + srv.dub.length > 0,
     servers: srv,
+    ...(serverError ? { server_error: serverError } : {}),
   };
 }
 
@@ -133,7 +139,7 @@ const routes = [
   ['GET', '/', () => ({ name: 'api-without-reanime', docs: 'https://github.com/electroo69/animegng', routes: routes.map(([m, p, , d]) => ({ method: m, path: p, description: d })) }), 'This index'],
 
   // Video (reanime flix)
-  ['GET', '/watch/:id/:ep', (p) => watch(Number(p.id), Number(p.ep)), 'Everything for one episode: anime, episode info, prev/next, sub/dub servers'],
+  ['GET', '/watch/:id/:ep', (p, q, ctx) => watch(Number(p.id), Number(p.ep), ctx), 'Everything for one episode: anime, episode info, prev/next, sub/dub servers'],
   ['GET', '/watch/:id/:ep/embed', async (p, q) => {
     const a = await detail(p.id);
     const srv = await servers(a.id, Number(p.ep), a.mal_id);
@@ -158,14 +164,14 @@ const routes = [
       recommendations: recommendations.slice(0, 8),
     };
   }, 'Full anime detail (AniList id). Includes cross-site ids, artwork, localized titles'],
-  ['GET', '/anime/:id/episodes', async (p, q) => {
-    const e = await episodes(p.id);
+  ['GET', '/anime/:id/episodes', async (p, q, ctx) => {
+    const e = await episodes(p.id, ctx);
     if (q.number) return { ...e, data: e.data.filter((x) => x.episode_number === Number(q.number)) };
     const limit = num(q.limit) ?? e.data.length, offset = num(q.offset) ?? 0;
     return { ...e, limit, offset, data: e.data.slice(offset, offset + limit) };
   }, 'Episode list with titles, stills, synopsis, filler/recap (?limit=&offset=&number=)'],
-  ['GET', '/anime/:id/thumbnails', async (p) => {
-    const e = await episodes(p.id);
+  ['GET', '/anime/:id/thumbnails', async (p, q, ctx) => {
+    const e = await episodes(p.id, ctx);
     return { anime_id: e.anime_id, thumbnails: Object.fromEntries(e.data.filter((x) => x.thumbnail).map((x) => [x.episode_number, x.thumbnail])) };
   }, 'Episode number -> thumbnail URL'],
   ['GET', '/anime/:id/characters', async (p) => ({ characters: (await detail(p.id)).characters }), 'Characters + voice actors'],
@@ -217,7 +223,6 @@ const json = (status, body, ttl = 0) =>
 /** Handle a request whose path has already had the /api prefix removed. */
 export async function handle(request, path, ctx) {
   if (request.method === 'OPTIONS') return json(204, null);
-  waitUntil = (p) => (ctx.waitUntil(p), p);
   const url = new URL(request.url);
   for (const r of compiled) {
     if (r.method !== request.method) continue;
@@ -226,16 +231,17 @@ export async function handle(request, path, ctx) {
     const params = Object.fromEntries(r.keys.map((k, i) => [k, decodeURIComponent(m[i + 1])]));
     if (params.id !== undefined && !/^\d+$/.test(params.id)) return json(400, { error: 'id must be a numeric AniList id (use /search to find it)' });
 
-    const cache = caches.default;
-    const hit = await cache.match(request);
+    const cache = globalThis.caches?.default;
+    const hit = await cache?.match(request);
     if (hit) return hit;
     try {
-      const data = await r.handler(params, Object.fromEntries(url.searchParams));
-      const ttl = EDGE_TTL.find(([re]) => re.test(path))[1];
+      const data = await r.handler(params, Object.fromEntries(url.searchParams), ctx);
+      const ttl = data.server_error ? 0 : EDGE_TTL.find(([re]) => re.test(path))[1];
       const res = json(200, data, ttl);
-      ctx.waitUntil(cache.put(request, res.clone()));
+      if (cache && ttl) ctx.waitUntil(cache.put(request, res.clone()));
       return res;
     } catch (err) {
+      console.error(JSON.stringify({ event: 'api_error', path, message: err.message }));
       const status = err.status >= 400 && err.status < 600 ? err.status : 502;
       return json(status, { error: err.message });
     }

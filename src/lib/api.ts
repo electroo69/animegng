@@ -101,6 +101,7 @@ export interface Server {
 }
 
 export interface WatchData {
+  server_error?: string
   anime: AnimeCard
   episode: Episode | null
   prev_episode: number | null

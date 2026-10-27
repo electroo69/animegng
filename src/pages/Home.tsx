@@ -36,7 +36,7 @@ export default function Home() {
       </div>
 
       <Container className="mt-12 space-y-14">
-        {error && <p className="rounded-xl border border-primary/30 bg-primary/10 p-4 text-sm">Couldn't reach the API. Is the "api without reanime" server running on port 3001?</p>}
+        {error && <p className="rounded-xl border border-primary/30 bg-primary/10 p-4 text-sm">Anime data is temporarily unavailable. Please try again shortly.</p>}
 
         <ContinueWatching />
 

@@ -38,3 +38,22 @@ Press `Ctrl K` or `/` anywhere to search.
 - Watch history, resume points and player settings are stored in `localStorage`.
 - Auto-next uses the player's `playerStatus` messages. HD-1 and HD-2 don't send time updates, so
   resuming partway through an episode only works on servers that do.
+
+## Production: Cloudflare website + Vercel API
+
+- Website: https://animegng.pages.dev (Pages build: `npm run build`, output: `dist`).
+- API: https://animegng-api.vercel.app/api (Vercel project `animegng-api`).
+- Pages Functions and the optional Cloudflare Worker forward `/api/*` to Vercel.
+  `worker/proxy.js` defaults to this API origin; `API_ORIGIN` can override it.
+- `api/index.js` adapts the shared API in `worker/app.js` to Vercel's Node.js runtime.
+  Explicit rewrites preserve nested paths and query parameters.
+- Successful public responses use CDN caching. Errors and video-provider failures are
+  not cached. Per-instance caches are optimizations, not durable storage or a global rate limiter.
+- Video servers still depend on reanime. If it rejects server requests, the watch page
+  retains episode details and shows a provider-unavailable message; metadata hosting
+  does not guarantee video availability.
+
+Validate with `node --test tests/*.test.mjs` and `npm run build`.
+Deploy the API from this directory with `vercel deploy --prod`, then deploy the site
+with `npx wrangler pages deploy dist --project-name animegng --branch main`.
+The optional Worker uses `npx wrangler deploy`.

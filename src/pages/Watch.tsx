@@ -151,8 +151,8 @@ export default function Watch() {
                     ) : (
                       <>
                         <AlertTriangle className="size-8 text-amber-400" />
-                        <span className="font-semibold text-white">{error ? "Couldn't load this episode" : "This episode isn't available yet"}</span>
-                        <span className="text-sm text-white/50">Try another episode, or check back later.</span>
+                        <span className="font-semibold text-white">{error ? "Couldn't load this episode" : data?.server_error ? "Playback temporarily unavailable" : "This episode isn't available yet"}</span>
+                        <span className="text-sm text-white/50">{data?.server_error || "Try another episode, or check back later."}</span>
                       </>
                     )}
                   </div>

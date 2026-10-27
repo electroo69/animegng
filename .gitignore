@@ -25,3 +25,8 @@ dist-ssr
 
 # Cloudflare
 .wrangler
+
+# Vercel local project metadata
+.vercel
+
+.vercel
