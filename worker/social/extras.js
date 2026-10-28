@@ -20,18 +20,24 @@ export async function rateLimit(env, key, max, windowSec) {
   if (row.count > max) fail(429, `Too many attempts. Try again in ${Math.ceil((row.reset_at - t) / 60000)} min.`);
 }
 
-// ------------------------------------------------------------------ email (Cloudflare Email Sending)
+// ------------------------------------------------------------------ email (Resend)
 
-// Email turns on once Email Sending is enabled for the domain and EMAIL_FROM is set.
-export const emailEnabled = (env) => !!(env.EMAIL && env.EMAIL_FROM);
+// Email is on when the RESEND_API_KEY secret is set (animegng.com verified in Resend).
+export const emailEnabled = (env) => !!env.RESEND_API_KEY;
+const FROM = (env) => env.EMAIL_FROM || 'AnimeGang <noreply@animegng.com>';
 
 export async function sendEmail(env, to, subject, text, html) {
   if (!emailEnabled(env)) return false;
   try {
-    await env.EMAIL.send({ to, from: { email: env.EMAIL_FROM, name: 'AnimeGang' }, subject, text, html });
+    const res = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ from: FROM(env), to: [to], subject, text, html }),
+    });
+    if (!res.ok) throw new Error(`Resend ${res.status}: ${(await res.text()).slice(0, 200)}`);
     return true;
   } catch (err) {
-    console.error(JSON.stringify({ event: 'email_error', code: err.code, message: err.message }));
+    console.error(JSON.stringify({ event: 'email_error', message: err.message }));
     return false;
   }
 }

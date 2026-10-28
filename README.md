@@ -120,9 +120,9 @@ parties run in the Worker (`worker/social/`), backed by the D1 database `animegn
   `npx wrangler d1 execute animegng --remote --command "UPDATE users SET is_admin = 1 WHERE username = 'NAME'"`
 - **New-episode notifications** run hourly (cron `7 * * * *`): in-app, browser push (VAPID key in the
   `VAPID_PRIVATE_JWK` secret) and email.
-- **Email** (password reset, sign-in links, episode emails) is off until you enable Email Sending for
-  animegng.com in the Cloudflare dashboard and set `EMAIL_FROM`, e.g. add `"vars": { "EMAIL_FROM": "noreply@animegng.com" }`
-  to `wrangler.jsonc` and redeploy.
+- **Email** (sign-up confirmation, password reset, sign-in links, episode emails) is sent with
+  [Resend](https://resend.com) from `noreply@animegng.com`: verify the domain in Resend and set the
+  `RESEND_API_KEY` secret (`npx wrangler secret put RESEND_API_KEY`). Override the sender with `EMAIL_FROM`.
 - **Rate limits:** sign-up 5/hour per IP; login 10 per 15 min per IP and 20 per account; email links 3/hour.
   The Pages proxy passes the visitor IP with the `PROXY_SECRET` shared secret (set on both projects).
 - **Watch parties** accept guests (no account) with a display name; guests can watch, chat and react.
