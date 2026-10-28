@@ -46,7 +46,7 @@ function useThread(anime: number, ep: number, sort: string, parent?: string, ena
   })
 }
 
-export function Comments({ anime, ep, currentTime }: { anime: number; ep: number; currentTime: () => number }) {
+export function Comments({ anime, ep, currentTime }: { anime: number; ep: number; currentTime?: () => number }) {
   const [sort, setSort] = useState<"top" | "new">("top")
   const q = useThread(anime, ep, sort)
   const items = q.data?.pages.flatMap((p) => p.items) ?? []

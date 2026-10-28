@@ -10,8 +10,7 @@ import { VideoPlayer } from "@/components/VideoPlayer"
 import { AmbientGlow } from "@/components/AmbientGlow"
 import { useRequireAuth } from "@/components/social/AuthDialog"
 import { Comments, EpisodeVotes } from "@/components/social/Comments"
-import { LiveCommentsOverlay } from "@/components/social/LiveComments"
-import { sapi, storedAnime, useLiveComments, type StoredAnime } from "@/lib/social"
+import { sapi, storedAnime, type StoredAnime } from "@/lib/social"
 import { embedSrc, useAnime, useEpisodes, useWatch, type Episode, type Server } from "@/lib/api"
 import { useDirectStream, usePrefetchDirect } from "@/lib/direct"
 import { cap, countdown, formatLabel, score, statusLabel, stripHtml, titleOf } from "@/lib/format"
@@ -31,7 +30,6 @@ export default function Watch() {
   const [videoEl, setVideoEl] = useState<HTMLVideoElement | null>(null)
   const frameRef = useRef<HTMLIFrameElement>(null)
   const lastSave = useRef(0)
-  const live = useLiveComments(id, ep, prefs.liveComments)
   const requireAuth = useRequireAuth()
   const [creatingParty, setCreatingParty] = useState(false)
   const startParty = () =>
@@ -202,9 +200,7 @@ export default function Watch() {
                   }}
                   onFatalError={() => setDirectFailed(lang)}
                   onVideo={setVideoEl}
-                >
-                  <LiveCommentsOverlay items={live.data ?? []} video={videoEl} enabled={prefs.liveComments} />
-                </VideoPlayer>
+                />
               ) : src ? (
                 <iframe
                   key={src}
@@ -248,7 +244,6 @@ export default function Watch() {
               <Toggle on={prefs.skipIntro} onClick={() => update({ skipIntro: !prefs.skipIntro })}>Skip intro</Toggle>
               <Toggle on={prefs.skipOutro} onClick={() => update({ skipOutro: !prefs.skipOutro })}>Skip outro</Toggle>
               <Toggle on={prefs.ambient} onClick={() => update({ ambient: !prefs.ambient })}>Ambient</Toggle>
-              <Toggle on={prefs.liveComments} onClick={() => update({ liveComments: !prefs.liveComments })}>Live comments</Toggle>
               <button onClick={() => setDim(!dim)} className={cn("flex h-8 items-center gap-1.5 rounded-lg px-3 text-xs font-medium text-white/60 transition hover:bg-white/5 hover:text-white", dim && "text-amber-300")}>
                 <Lightbulb className="size-3.5" />
                 Lights
@@ -321,7 +316,7 @@ export default function Watch() {
               </div>
             </div>
 
-            <Comments anime={id} ep={ep} currentTime={() => videoEl?.currentTime ?? 0} />
+            <Comments anime={id} ep={ep} />
 
             <LeaderboardAd className="mt-10" />
           </div>

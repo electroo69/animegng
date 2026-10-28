@@ -233,11 +233,11 @@ function PartyRoom({ id, guestName }: { id: string; guestName?: string }) {
     return () => video.removeEventListener("loadedmetadata", onReady)
   }, [video, isHost]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Chat and reactions fly across the video.
+  // Emoji reactions float across the video (chat stays in the side panel).
   useEffect(
     () =>
       subscribe((m) => {
-        const text = m.t === "chat" ? `${(m.msg as ChatMsg).user.display_name}: ${(m.msg as ChatMsg).body}` : m.t === "react" ? `${m.emoji as string}` : null
+        const text = m.t === "react" ? `${m.emoji as string}` : null
         if (!text) return
         setFlying((f) => [...f, { key: `${Date.now()}-${Math.random()}`, text, lane: lane.current++ % 6 }].slice(-16))
       }),
@@ -368,7 +368,7 @@ function Chat({ chat, me, onSend }: { chat: ChatMsg[]; me: User; onSend: (body: 
   return (
     <>
       <div className="flex-1 space-y-3 overflow-y-auto p-4">
-        {!chat.length && <p className="pt-10 text-center text-sm text-white/35">Say hi 👋 Messages also fly across the video.</p>}
+        {!chat.length && <p className="pt-10 text-center text-sm text-white/35">Say hi 👋</p>}
         {chat.map((m) => (
           <div key={m.id} className="flex gap-2.5">
             <Avatar name={m.user.display_name} src={m.user.avatar} size={28} />
