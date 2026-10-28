@@ -118,6 +118,13 @@ parties run in the Worker (`worker/social/`), backed by the D1 database `animegn
   The buttons appear automatically once both are set.
 - **Make someone an admin** (can delete any comment, ban users):
   `npx wrangler d1 execute animegng --remote --command "UPDATE users SET is_admin = 1 WHERE username = 'NAME'"`
-- **New-episode notifications** run hourly (cron `7 * * * *`).
+- **New-episode notifications** run hourly (cron `7 * * * *`): in-app, browser push (VAPID key in the
+  `VAPID_PRIVATE_JWK` secret) and email.
+- **Email** (password reset, sign-in links, episode emails) is off until you enable Email Sending for
+  animegng.com in the Cloudflare dashboard and set `EMAIL_FROM`, e.g. add `"vars": { "EMAIL_FROM": "noreply@animegng.com" }`
+  to `wrangler.jsonc` and redeploy.
+- **Rate limits:** sign-up 5/hour per IP; login 10 per 15 min per IP and 20 per account; email links 3/hour.
+  The Pages proxy passes the visitor IP with the `PROXY_SECRET` shared secret (set on both projects).
+- **Watch parties** accept guests (no account) with a display name; guests can watch, chat and react.
 - **Local development:** `npx wrangler d1 migrations apply animegng --local`, run `npx wrangler dev --port 8787 --local`,
   then the site with `SOCIAL_URL=http://localhost:8787` so test accounts stay in the local database.

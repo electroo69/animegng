@@ -98,7 +98,7 @@ export class PartyRoom extends DurableObject {
       if (!text) return;
       // 1 message per 700 ms per user.
       const last = user._last || 0;
-      if (Date.now() - last < 700) return ws.send(JSON.stringify({ t: 'error', message: 'Slow down' }));
+      if (Date.now() - last < (user.guest ? 2000 : 700)) return ws.send(JSON.stringify({ t: 'error', message: 'Slow down' }));
       ws.serializeAttachment({ ...user, _last: Date.now() });
       const msg = { id: uid(), user: { id: user.id, display_name: user.display_name, avatar: user.avatar }, body: text, at: Date.now(), position: Number(m.position) || null };
       const chat = ((await this.ctx.storage.get('chat')) || []).concat(msg).slice(-MAX_CHAT);

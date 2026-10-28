@@ -2,6 +2,7 @@ import { lazy, Suspense, useEffect } from "react"
 import { Route, Routes, useLocation } from "react-router-dom"
 import { Navbar } from "@/components/Navbar"
 import { Footer } from "@/components/Footer"
+import { ConsentBanner } from "@/components/social/ConsentBanner"
 import { ScrollProgress } from "@/components/ui/scroll-progress"
 import Home from "@/pages/Home"
 import NotFound from "@/pages/NotFound"
@@ -16,6 +17,9 @@ const GenrePage = lazy(() => import("@/pages/Collection").then((m) => ({ default
 const SeasonPage = lazy(() => import("@/pages/Collection").then((m) => ({ default: m.SeasonPage })))
 const Library = lazy(() => import("@/pages/Library"))
 const Party = lazy(() => import("@/pages/Party"))
+const Settings = lazy(() => import("@/pages/Account").then((m) => ({ default: m.Settings })))
+const ResetPassword = lazy(() => import("@/pages/Account").then((m) => ({ default: m.ResetPassword })))
+const Privacy = lazy(() => import("@/pages/Account").then((m) => ({ default: m.Privacy })))
 
 function ScrollToTop() {
   const { pathname } = useLocation()
@@ -44,11 +48,15 @@ export default function App() {
             <Route path="/season/:year/:season" element={<SeasonPage />} />
             <Route path="/library" element={<Library />} />
             <Route path="/party/:id" element={<Party />} />
+            <Route path="/settings" element={<Settings />} />
+            <Route path="/reset" element={<ResetPassword />} />
+            <Route path="/privacy" element={<Privacy />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </Suspense>
       </main>
       <Footer />
+      <ConsentBanner />
     </div>
   )
 }

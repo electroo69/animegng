@@ -2,7 +2,7 @@
 import { createContext, useContext, useState, type ReactNode } from "react"
 import { Loader2 } from "lucide-react"
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog"
-import { useAuthActions, useMe, useProviders } from "@/lib/social"
+import { sapi, useAuthActions, useMe, useProviders } from "@/lib/social"
 import { cn } from "@/lib/utils"
 
 const Ctx = createContext<{ open: (reason?: string) => void }>({ open: () => {} })
@@ -26,12 +26,25 @@ export function AuthDialogProvider({ children }: { children: ReactNode }) {
 }
 
 function AuthDialog({ open, reason, onOpenChange }: { open: boolean; reason?: string; onOpenChange: (o: boolean) => void }) {
-  const [mode, setMode] = useState<"login" | "register">("login")
+  const [mode, setMode] = useState<"login" | "register" | "forgot" | "magic">("login")
+  const [email, setEmail] = useState("")
+  const [sent, setSent] = useState<string | null>(null)
+  const [emailError, setEmailError] = useState<string | null>(null)
   const [username, setUsername] = useState("")
   const [password, setPassword] = useState("")
   const { login, register } = useAuthActions()
   const providers = useProviders()
-  const action = mode === "login" ? login : register
+  const action = mode === "register" ? register : login
+  const sendLink = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setEmailError(null)
+    try {
+      await sapi(mode === "forgot" ? "/auth/forgot" : "/auth/magic", { body: { email: email.trim() } })
+      setSent(`If an account uses ${email.trim()}, we've emailed it a link.`)
+    } catch (err) {
+      setEmailError((err as Error).message)
+    }
+  }
   const next = typeof window !== "undefined" ? window.location.pathname + window.location.search : "/"
 
   const submit = (e: React.FormEvent) => {
@@ -50,7 +63,7 @@ function AuthDialog({ open, reason, onOpenChange }: { open: boolean; reason?: st
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="border-white/10 bg-popover/95 p-6 backdrop-blur-xl sm:max-w-sm" showCloseButton>
-        <DialogTitle className="text-xl font-bold">{mode === "login" ? "Welcome back" : "Create your account"}</DialogTitle>
+        <DialogTitle className="text-xl font-bold">{{ login: "Welcome back", register: "Create your account", forgot: "Reset your password", magic: "Sign in with email" }[mode]}</DialogTitle>
         <DialogDescription className="text-sm text-white/50">
           {reason ?? "Sync your history across devices, make playlists, comment and host watch parties."}
         </DialogDescription>
@@ -71,6 +84,21 @@ function AuthDialog({ open, reason, onOpenChange }: { open: boolean; reason?: st
           </div>
         )}
 
+        {(mode === "forgot" || mode === "magic") && (
+          <form onSubmit={sendLink} className="mt-2 space-y-3">
+            {sent ? (
+              <p className="rounded-xl bg-emerald-500/10 p-3 text-sm text-emerald-300">{sent}</p>
+            ) : (
+              <>
+                <input type="email" autoFocus value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Your account email" className="h-11 w-full rounded-xl border border-white/10 bg-white/[0.04] px-4 text-sm outline-none focus:border-primary/60" />
+                {emailError && <p className="text-sm text-red-400">{emailError}</p>}
+                <button disabled={!email} className="flex h-11 w-full items-center justify-center rounded-xl bg-primary text-sm font-semibold text-white disabled:opacity-50">{mode === "forgot" ? "Email me a reset link" : "Email me a sign-in link"}</button>
+              </>
+            )}
+            <button type="button" onClick={() => { setMode("login"); setSent(null) }} className="w-full text-center text-sm font-semibold text-primary hover:underline">Back to sign in</button>
+          </form>
+        )}
+        {(mode === "login" || mode === "register") && (<>
         <form onSubmit={submit} className="mt-2 space-y-3">
           <input
             autoFocus
@@ -93,6 +121,12 @@ function AuthDialog({ open, reason, onOpenChange }: { open: boolean; reason?: st
             {action.isPending && <Loader2 className="size-4 animate-spin" />}
             {mode === "login" ? "Sign in" : "Create account"}
           </button>
+          {mode === "login" && providers.data?.email && (
+            <div className="flex justify-between text-xs font-semibold text-white/50">
+              <button type="button" onClick={() => setMode("forgot")} className="hover:text-white">Forgot password?</button>
+              <button type="button" onClick={() => setMode("magic")} className="hover:text-white">Email me a sign-in link</button>
+            </div>
+          )}
         </form>
         <p className="mt-1 text-center text-sm text-white/50">
           {mode === "login" ? "New here?" : "Already have an account?"}{" "}
@@ -107,6 +141,7 @@ function AuthDialog({ open, reason, onOpenChange }: { open: boolean; reason?: st
             {mode === "login" ? "Create an account" : "Sign in"}
           </button>
         </p>
+        </>)}
       </DialogContent>
     </Dialog>
   )

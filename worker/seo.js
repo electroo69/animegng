@@ -313,6 +313,8 @@ Disallow: /native$
 Disallow: /embeds/
 Disallow: /party/
 Disallow: /library
+Disallow: /settings
+Disallow: /reset
 
 Sitemap: ${SITE}/sitemap.xml
 `;

@@ -44,12 +44,25 @@ interface Member {
   avatar: string | null
 }
 
+// Stable id for this browser's guest identity, so reconnects don't show up as a new person.
+function guestId() {
+  try {
+    let g = localStorage.getItem("ag:gid")
+    if (!g) localStorage.setItem("ag:gid", (g = crypto.randomUUID()))
+    return g
+  } catch {
+    return crypto.randomUUID()
+  }
+}
+
 const REACTIONS = ["😂", "😮", "😭", "🔥", "❤️", "👏", "💀", "😡"]
 const DRIFT = 2 // seconds of allowed difference from the host before we seek
 
 export default function Party() {
   const id = useParams().id ?? ""
   const { data: me, isLoading: meLoading } = useMe()
+  const [guest, setGuest] = useState<string | null>(null)
+  const [name, setName] = useState("")
   const { open } = useAuthDialog()
   const info = useQuery({ queryKey: ["party-info", id], queryFn: () => sapi<{ room: Room; members: number }>(`/rooms/${id}`), retry: false })
 
@@ -57,20 +70,31 @@ export default function Party() {
 
   if (info.error) return <NotFound message="This watch party doesn't exist or has ended." />
   if (meLoading || info.isLoading) return <div className="grid min-h-[70vh] place-items-center"><Loader2 className="size-8 animate-spin text-primary" /></div>
-  if (!me)
+  if (!me && guest === null)
     return (
-      <Container className="pt-32 text-center">
+      <Container className="max-w-md pt-32 text-center">
         <Users className="mx-auto size-10 text-primary" />
         <h1 className="mt-4 text-2xl font-bold">You're invited to a watch party</h1>
         {info.data && <p className="mt-2 text-white/55">{titleOf(info.data.room.anime.title)} · Episode {info.data.room.episode} · {info.data.members} watching</p>}
-        <button onClick={() => open("Sign in to join the watch party.")} className="mt-6 h-11 rounded-xl bg-primary px-6 text-sm font-semibold text-white">Sign in to join</button>
+        <form
+          onSubmit={(e) => {
+            e.preventDefault()
+            setGuest(name.trim())
+          }}
+          className="mt-6 flex gap-2"
+        >
+          <input value={name} onChange={(e) => setName(e.target.value)} maxLength={24} placeholder="Your name" className="h-11 min-w-0 flex-1 rounded-xl border border-white/10 bg-white/[0.04] px-4 text-sm outline-none focus:border-primary/60" />
+          <button className="h-11 shrink-0 rounded-xl bg-primary px-5 text-sm font-semibold text-white">Join as guest</button>
+        </form>
+        <button onClick={() => open("Sign in to join with your account.")} className="mt-3 text-sm font-semibold text-white/60 hover:text-white">or sign in</button>
       </Container>
     )
-  return <PartyRoom id={id} me={me} />
+  return <PartyRoom id={id} guestName={me ? undefined : guest ?? ''} />
 }
 
-function useRoomSocket(id: string) {
+function useRoomSocket(id: string, guestName?: string) {
   const [room, setRoom] = useState<Room | null>(null)
+  const [you, setYou] = useState<User | null>(null)
   const [members, setMembers] = useState<Member[]>([])
   const [chat, setChat] = useState<ChatMsg[]>([])
   const [connected, setConnected] = useState(false)
@@ -84,7 +108,8 @@ function useRoomSocket(id: string) {
     let retry = 0
     let timer: ReturnType<typeof setTimeout>
     const connect = () => {
-      const s = new WebSocket(`${location.protocol === "https:" ? "wss" : "ws"}://${location.host}/api/u/rooms/${id}`)
+      const q = guestName === undefined ? "" : `?name=${encodeURIComponent(guestName)}&gid=${guestId()}`
+      const s = new WebSocket(`${location.protocol === "https:" ? "wss" : "ws"}://${location.host}/api/u/rooms/${id}${q}`)
       ws.current = s
       let sentAt = 0
       s.onopen = () => {
@@ -98,6 +123,7 @@ function useRoomSocket(id: string) {
         const m = JSON.parse(e.data)
         if (m.t === "pong") offset.current = m.now - (sentAt + (Date.now() - sentAt) / 2)
         if (m.t === "hello") {
+          setYou(m.you)
           setRoom(m.room)
           setChat(m.chat)
         }
@@ -123,7 +149,7 @@ function useRoomSocket(id: string) {
       clearTimeout(timer)
       ws.current?.close()
     }
-  }, [id])
+  }, [id, guestName])
 
   const send = useCallback((m: object) => {
     if (ws.current?.readyState === WebSocket.OPEN) ws.current.send(JSON.stringify(m))
@@ -134,11 +160,12 @@ function useRoomSocket(id: string) {
       listeners.current.delete(l)
     }
   }, [])
-  return { room, members, chat, connected, error, send, subscribe, serverNow: () => Date.now() + offset.current }
+  return { room, you, members, chat, connected, error, send, subscribe, serverNow: () => Date.now() + offset.current }
 }
 
-function PartyRoom({ id, me }: { id: string; me: User }) {
-  const { room, members, chat, connected, error, send, subscribe, serverNow } = useRoomSocket(id)
+function PartyRoom({ id, guestName }: { id: string; guestName?: string }) {
+  const { room, you, members, chat, connected, error, send, subscribe, serverNow } = useRoomSocket(id, guestName)
+  const me: User = you ?? { id: "", username: "", display_name: "", avatar: null, is_admin: false }
   const [video, setVideo] = useState<HTMLVideoElement | null>(null)
   const [needsGesture, setNeedsGesture] = useState(false)
   const [flying, setFlying] = useState<{ key: string; text: string; lane: number }[]>([])

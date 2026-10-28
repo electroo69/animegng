@@ -2,6 +2,7 @@
 // credentials are configured as Worker secrets (GOOGLE_CLIENT_ID/SECRET, DISCORD_CLIENT_ID/SECRET).
 // Sessions are random tokens in an HttpOnly cookie; only their SHA-256 is stored.
 import { b64, cookie, cookies, fail, json, now, publicOrigin, publicUser, sha256, token, uid, unb64 } from './util.js';
+import { clientIp, emailEnabled, emails, issueToken, linkTo, rateLimit, sendEmail, useToken } from './extras.js';
 
 const SESSION_COOKIE = 'ag_session';
 const SESSION_DAYS = 30;
@@ -45,6 +46,7 @@ async function startSession(env, userId) {
 const USERNAME = /^[a-zA-Z0-9_]{3,20}$/;
 
 export async function register(request, env, data) {
+  await rateLimit(env, `register:${clientIp(request, env)}`, 5, 3600);
   const username = String(data.username || '').trim();
   const password = String(data.password || '');
   if (!USERNAME.test(username)) fail(400, 'Username must be 3–20 letters, numbers or underscores');
@@ -59,6 +61,9 @@ export async function register(request, env, data) {
 }
 
 export async function login(request, env, data) {
+  const name = String(data.username || '').trim().toLowerCase();
+  await rateLimit(env, `login-ip:${clientIp(request, env)}`, 10, 900);
+  await rateLimit(env, `login-user:${name}`, 20, 900);
   const user = await env.DB.prepare('SELECT * FROM users WHERE username = ?').bind(String(data.username || '').trim()).first();
   const ok = user?.password_hash && sameHash(await hashPassword(String(data.password || ''), unb64(user.password_salt)), user.password_hash);
   if (!ok) fail(401, 'Wrong username or password');
@@ -96,7 +101,75 @@ const PROVIDERS = {
 };
 const creds = (env, p) => ({ id: env[`${p.toUpperCase()}_CLIENT_ID`], secret: env[`${p.toUpperCase()}_CLIENT_SECRET`] });
 
-export const providers = (env) => json({ google: !!creds(env, 'google').id, discord: !!creds(env, 'discord').id });
+export const providers = (env) => json({ google: !!creds(env, 'google').id, discord: !!creds(env, 'discord').id, email: emailEnabled(env) });
+
+// ------------------------------------------------------------------ password & email flows
+
+export async function changePassword(env, me, data) {
+  if (me.password_hash) {
+    const ok = sameHash(await hashPassword(String(data.current || ''), unb64(me.password_salt)), me.password_hash);
+    if (!ok) fail(401, 'Current password is wrong');
+  }
+  await setPassword(env, me.id, String(data.password || ''));
+  // Other devices are signed out; keep this one signed in with a fresh session.
+  return json({ ok: true }, 200, { 'Set-Cookie': await startSession(env, me.id) });
+}
+
+async function setPassword(env, userId, password) {
+  if (password.length < 8 || password.length > 200) fail(400, 'Password must be at least 8 characters');
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  await env.DB.batch([
+    env.DB.prepare('UPDATE users SET password_hash = ?, password_salt = ? WHERE id = ?').bind(await hashPassword(password, salt), b64(salt), userId),
+    env.DB.prepare('DELETE FROM sessions WHERE user_id = ?').bind(userId), // sign out other devices
+  ]);
+}
+
+// Sends a reset or sign-in link if an account has this verified email. Always answers the same,
+// so the form can't be used to discover which emails have accounts.
+export async function emailLink(request, env, data, kind) {
+  if (!emailEnabled(env)) fail(503, 'Email is not available yet');
+  const email = String(data.email || '').trim().toLowerCase();
+  await rateLimit(env, `${kind}-ip:${clientIp(request, env)}`, 5, 3600);
+  await rateLimit(env, `${kind}-email:${email}`, 3, 3600);
+  const user = await env.DB.prepare('SELECT id, banned FROM users WHERE email = ?').bind(email).first();
+  if (user && !user.banned) {
+    const t = await issueToken(env, user.id, kind);
+    const [subject, text, html] = kind === 'reset' ? emails.reset(linkTo(env, `/reset?t=${t}`)) : emails.magic(linkTo(env, `/api/u/auth/magic/verify?t=${t}`));
+    await sendEmail(env, email, subject, text, html);
+  }
+  return json({ ok: true });
+}
+
+export async function resetPassword(request, env, data) {
+  await rateLimit(env, `reset-submit:${clientIp(request, env)}`, 10, 3600);
+  const { user_id } = await useToken(env, data.token, 'reset');
+  await setPassword(env, user_id, String(data.password || ''));
+  const user = await env.DB.prepare('SELECT * FROM users WHERE id = ?').bind(user_id).first();
+  return json({ user: publicUser(user) }, 200, { 'Set-Cookie': await startSession(env, user_id) });
+}
+
+export async function magicVerify(request, env) {
+  const { user_id } = await useToken(env, new URL(request.url).searchParams.get('t'), 'magic');
+  return new Response(null, { status: 302, headers: { Location: `${publicOrigin(env)}/`, 'Set-Cookie': await startSession(env, user_id) } });
+}
+
+export async function requestEmailVerify(request, env, me, data) {
+  if (!emailEnabled(env)) fail(503, 'Email is not available yet');
+  const email = String(data.email || '').trim().toLowerCase();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 200) fail(400, 'Enter a valid email address');
+  await rateLimit(env, `verify:${me.id}`, 5, 3600);
+  if (await env.DB.prepare('SELECT 1 FROM users WHERE email = ? AND id != ?').bind(email, me.id).first()) fail(409, 'That email is used by another account');
+  const t = await issueToken(env, me.id, 'verify', email);
+  const [subject, text, html] = emails.verify(linkTo(env, `/api/u/me/email/verify?t=${t}`));
+  if (!(await sendEmail(env, email, subject, text, html))) fail(502, "Couldn't send the email, try again later");
+  return json({ ok: true });
+}
+
+export async function confirmEmail(request, env) {
+  const { user_id, email } = await useToken(env, new URL(request.url).searchParams.get('t'), 'verify');
+  await env.DB.prepare('UPDATE users SET email = ? WHERE id = ?').bind(email, user_id).run();
+  return new Response(null, { status: 302, headers: { Location: `${publicOrigin(env)}/settings?email=verified` } });
+}
 
 export async function oauthStart(request, env, provider) {
   const p = PROVIDERS[provider];

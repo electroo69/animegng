@@ -1,6 +1,6 @@
 // Navbar account area: sign-in button, or notifications bell + avatar menu.
 import { Link, useNavigate } from "react-router-dom"
-import { Bell, Library, LogOut, MessageSquare, Tv } from "lucide-react"
+import { Bell, Library, LogOut, MessageSquare, Settings, Tv } from "lucide-react"
 import { useQueryClient } from "@tanstack/react-query"
 import { useAuthDialog } from "@/components/social/AuthDialog"
 import { Avatar, Dropdown, ago } from "@/components/social/ui"
@@ -43,6 +43,7 @@ export function UserMenu() {
             <div className="my-1 h-px bg-white/10" />
             <MenuLink to="/library" icon={Library} onClick={close}>Library</MenuLink>
             <MenuLink to="/library?tab=subscriptions" icon={Bell} onClick={close}>Subscriptions</MenuLink>
+            <MenuLink to="/settings" icon={Settings} onClick={close}>Settings</MenuLink>
             <button
               onClick={() => {
                 close()

@@ -66,4 +66,5 @@ export const publicOrigin = (env) => env.PUBLIC_ORIGIN || 'https://animegng.com'
 const BAD = /\b(fuck(?:ing|er|ed)?|shit|cunt|nigg(?:a|er)s?|faggots?|retards?|bitch(?:es)?|whores?|rape)\b/gi;
 export const clean = (s) => s.replace(BAD, (w) => w[0] + '*'.repeat(w.length - 1));
 
+export const privateUser = (u) => (u ? { ...publicUser(u), email: u.email ?? null, email_notify: !!u.email_notify, has_password: !!u.password_hash } : null);
 export const publicUser = (u) => (u ? { id: u.id, username: u.username, display_name: u.display_name, avatar: u.avatar, is_admin: !!u.is_admin } : null);

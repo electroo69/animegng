@@ -1,5 +1,6 @@
 // Hourly: turn newly aired episodes of subscribed anime into in-app notifications.
 import { now, uid } from './util.js';
+import { emailEnabled, emails, linkTo, pushTo, sendEmail } from './extras.js';
 
 export async function notifyNewEpisodes(env) {
   const { results: subs } = await env.DB.prepare('SELECT DISTINCT anime_id FROM subscriptions').all();
@@ -15,12 +16,19 @@ export async function notifyNewEpisodes(env) {
   }
   for (const item of aired) {
     if (!wanted.has(item.anime.id) || new Date(item.aired_at).getTime() > now()) continue;
-    const { results: due } = await env.DB.prepare('SELECT user_id FROM subscriptions WHERE anime_id = ? AND last_notified_episode < ?').bind(item.anime.id, item.episode).all();
+    const { results: due } = await env.DB.prepare(`SELECT s.user_id, u.email, u.email_notify FROM subscriptions s JOIN users u ON u.id = s.user_id
+      WHERE s.anime_id = ? AND s.last_notified_episode < ?`).bind(item.anime.id, item.episode).all();
     if (!due.length) continue;
     const payload = JSON.stringify({ anime_id: item.anime.id, episode: item.episode, title: item.anime.title, cover: item.anime.cover_image?.large });
     await env.DB.batch([
       ...due.map((d) => env.DB.prepare('INSERT INTO notifications (id, user_id, type, payload, created_at) VALUES (?, ?, ?, ?, ?)').bind(uid(), d.user_id, 'episode', payload, now())),
       env.DB.prepare('UPDATE subscriptions SET last_notified_episode = ? WHERE anime_id = ? AND last_notified_episode < ?').bind(item.episode, item.anime.id, item.episode),
     ]);
+    await pushTo(env, due.map((d) => d.user_id));
+    if (emailEnabled(env)) {
+      const t = item.anime.title?.english || item.anime.title?.romaji || 'An anime you follow';
+      const [subject, text, html] = emails.episode(t, item.episode, linkTo(env, `/watch/${item.anime.id}/${item.episode}`));
+      for (const d of due) if (d.email && d.email_notify) await sendEmail(env, d.email, subject, text, html);
+    }
   }
 }

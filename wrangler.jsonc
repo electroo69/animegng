@@ -20,5 +20,8 @@
   "migrations": [{ "tag": "v1", "new_sqlite_classes": ["PartyRoom"] }],
   // Hourly: notify subscribers about newly aired episodes.
   "triggers": { "crons": ["7 * * * *"] },
+  // Transactional email (password reset, sign-in links, episode alerts). Enable Email Sending for
+  // animegng.com, then set the var EMAIL_FROM (e.g. "noreply@animegng.com") to turn it on.
+  "send_email": [{ "name": "EMAIL" }],
   "observability": { "enabled": true }
 }

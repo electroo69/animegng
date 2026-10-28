@@ -15,7 +15,11 @@ export async function onRequest(context) {
   const { request, env } = context;
   const url = new URL(request.url);
   if (url.pathname.startsWith('/api/u/')) {
-    return fetch(new Request(`${env.SOCIAL_ORIGIN || SOCIAL_ORIGIN}${url.pathname}${url.search}`, request), { redirect: 'manual' });
+    const fwd = new Request(`${env.SOCIAL_ORIGIN || SOCIAL_ORIGIN}${url.pathname}${url.search}`, request);
+    // The Worker trusts this IP (for rate limits) only alongside the shared secret.
+    fwd.headers.set('X-AG-Client-IP', request.headers.get('CF-Connecting-IP') || '');
+    if (env.PROXY_SECRET) fwd.headers.set('X-AG-Proxy', env.PROXY_SECRET);
+    return fetch(fwd, { redirect: 'manual' });
   }
   if (url.hostname === LEGACY_HOST && !url.pathname.startsWith('/api') && (request.method === 'GET' || request.method === 'HEAD')) {
     url.hostname = CANONICAL_HOST;

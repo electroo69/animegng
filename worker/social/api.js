@@ -1,6 +1,7 @@
 // Account & community API, served at /api/u/* (the Pages site proxies these paths to this Worker).
-import { currentUser, login, logout, oauthCallback, oauthStart, providers, register, requireUser } from './auth.js';
-import { body, checkOrigin, clean, fail, HttpError, json, now, publicUser, uid } from './util.js';
+import { changePassword, confirmEmail, currentUser, emailLink, login, logout, magicVerify, oauthCallback, oauthStart, providers, register, requestEmailVerify, requireUser, resetPassword } from './auth.js';
+import { clientIp, rateLimit, VAPID_PUBLIC } from './extras.js';
+import { body, checkOrigin, clean, fail, HttpError, json, now, privateUser, publicUser, uid } from './util.js';
 
 const int = (v, name) => {
   const n = Number(v);
@@ -118,12 +119,31 @@ async function vote(env, user, type, target, value) {
 const routes = [];
 const on = (method, pattern, handler) => routes.push([method, new RegExp(`^${pattern.replace(/:(\w+)/g, '(?<$1>[^/]+)')}$`), handler, `${method} ${pattern}`]);
 
-on('GET', '/me', async (r, env, { user }) => json({ user: publicUser(user) }));
+on('GET', '/me', async (r, env, { user }) => json({ user: privateUser(user) }));
+on('POST', '/me/password', async (r, env, { me, data }) => changePassword(env, me, data));
+on('POST', '/me/email', async (r, env, { me, data }) => requestEmailVerify(r, env, me, data));
+on('GET', '/me/email/verify', async (r, env) => confirmEmail(r, env));
+on('POST', '/auth/forgot', async (r, env, { data }) => emailLink(r, env, data, 'reset'));
+on('POST', '/auth/magic', async (r, env, { data }) => emailLink(r, env, data, 'magic'));
+on('GET', '/auth/magic/verify', async (r, env) => magicVerify(r, env));
+on('POST', '/auth/reset', async (r, env, { data }) => resetPassword(r, env, data));
+on('GET', '/push/key', async () => json({ key: VAPID_PUBLIC }));
+on('POST', '/push/subscribe', async (r, env, { me, data }) => {
+  const endpoint = String(data.endpoint || '');
+  if (!/^https:\/\//.test(endpoint) || endpoint.length > 1000) fail(400, 'Invalid push subscription');
+  await env.DB.prepare('INSERT OR REPLACE INTO push_subscriptions (endpoint, user_id, created_at) VALUES (?, ?, ?)').bind(endpoint, me.id, now()).run();
+  return json({ ok: true });
+});
+on('POST', '/push/unsubscribe', async (r, env, { me, data }) => {
+  await env.DB.prepare('DELETE FROM push_subscriptions WHERE endpoint = ? AND user_id = ?').bind(String(data.endpoint || ''), me.id).run();
+  return json({ ok: true });
+});
 on('PATCH', '/me', async (r, env, { me, data }) => {
   const name = String(data.display_name ?? me.display_name).trim().slice(0, 40);
   if (!name) fail(400, 'Display name is required');
-  await env.DB.prepare('UPDATE users SET display_name = ? WHERE id = ?').bind(clean(name), me.id).run();
-  return json({ user: publicUser({ ...me, display_name: clean(name) }) });
+  const notify = data.email_notify === undefined ? me.email_notify : data.email_notify ? 1 : 0;
+  await env.DB.prepare('UPDATE users SET display_name = ?, email_notify = ? WHERE id = ?').bind(clean(name), notify, me.id).run();
+  return json({ user: privateUser({ ...me, display_name: clean(name), email_notify: notify }) });
 });
 on('DELETE', '/me', async (r, env, { me }) => {
   await env.DB.batch([env.DB.prepare('DELETE FROM comments WHERE user_id = ?').bind(me.id), env.DB.prepare('DELETE FROM users WHERE id = ?').bind(me.id)]);
@@ -277,6 +297,7 @@ on('POST', '/admin/ban', async (r, env, { me, data }) => {
 
 // Watch-party rooms (Durable Objects, see room.js).
 on('POST', '/rooms', async (r, env, { me, data }) => {
+  await rateLimit(env, `rooms:${me.id}`, 10, 3600);
   const id = env.ROOMS.newUniqueId();
   const stub = env.ROOMS.get(id);
   await stub.fetch('https://room/init', {
@@ -295,15 +316,19 @@ on('GET', '/rooms/:id', async (r, env, { user, p }) => {
   const stub = env.ROOMS.get(id);
   const url = new URL(r.url);
   if (r.headers.get('Upgrade') === 'websocket') {
-    if (!user) fail(401, 'Please log in to join a watch party');
+    // Signed-out visitors join as guests with a chosen (or generated) name.
+    const guestName = clean(String(url.searchParams.get('name') || '').trim().replace(/[^\p{L}\p{N} _-]/gu, '').slice(0, 24)) || `Guest-${Math.floor(Math.random() * 9000 + 1000)}`;
+    const gid = String(url.searchParams.get('gid') || '').replace(/[^a-zA-Z0-9-]/g, '').slice(0, 36) || uid();
+    const who = user ? publicUser(user) : { id: `guest-${gid}`, username: null, display_name: `${guestName} (guest)`, avatar: null, is_admin: false, guest: true };
+    if (!user) await rateLimit(env, `guest-join:${clientIp(r, env)}`, 30, 600);
     const h = new Headers(r.headers);
-    h.set('X-User', JSON.stringify(publicUser(user)));
+    h.set('X-User', JSON.stringify(who));
     return stub.fetch(new Request('https://room/ws', { headers: h }));
   }
   return stub.fetch(`https://room/info${url.search}`);
 });
 
-const PUBLIC = new Set(['GET /me', 'GET /auth/providers', 'POST /auth/register', 'POST /auth/login', 'POST /auth/logout', 'GET /auth/:provider', 'GET /auth/:provider/callback', 'GET /anime/:anime/state', 'GET /episodes/:anime/:ep', 'GET /comments', 'GET /live', 'GET /rooms/:id']);
+const PUBLIC = new Set(['GET /me/email/verify', 'POST /auth/forgot', 'POST /auth/magic', 'GET /auth/magic/verify', 'POST /auth/reset', 'GET /push/key', 'GET /me', 'GET /auth/providers', 'POST /auth/register', 'POST /auth/login', 'POST /auth/logout', 'GET /auth/:provider', 'GET /auth/:provider/callback', 'GET /anime/:anime/state', 'GET /episodes/:anime/:ep', 'GET /comments', 'GET /live', 'GET /rooms/:id']);
 
 export async function handleSocial(request, env, path) {
   try {

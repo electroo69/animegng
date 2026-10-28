@@ -10,6 +10,9 @@ export interface User {
   display_name: string
   avatar: string | null
   is_admin: boolean
+  email?: string | null
+  email_notify?: boolean
+  has_password?: boolean
 }
 
 export class SocialError extends Error {
@@ -55,7 +58,7 @@ export const useMe = () =>
   useQuery({ queryKey: ["me"], queryFn: () => sapi<{ user: User | null }>("/me").then((d) => d.user), staleTime: 5 * 60_000, retry: false })
 
 export const useProviders = () =>
-  useQuery({ queryKey: ["providers"], queryFn: () => sapi<{ google: boolean; discord: boolean }>("/auth/providers"), staleTime: Infinity })
+  useQuery({ queryKey: ["providers"], queryFn: () => sapi<{ google: boolean; discord: boolean; email: boolean }>("/auth/providers"), staleTime: Infinity })
 
 export function useAuthActions() {
   const qc = useQueryClient()
