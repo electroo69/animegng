@@ -41,7 +41,7 @@ Press `Ctrl K` or `/` anywhere to search.
 
 ## Production: Cloudflare website + Vercel API
 
-- Website: https://animegng.pages.dev (Pages build: `npm run build`, output: `dist`).
+- Website: https://animegng.com (animegng.pages.dev redirects there; Pages build: `npm run build`, output: `dist`).
 - API: https://animegng-api.vercel.app/api (Vercel project `animegng-api`).
 - Pages Functions and the optional Cloudflare Worker forward `/api/*` to Vercel.
   `worker/proxy.js` defaults to this API origin; `API_ORIGIN` can override it.

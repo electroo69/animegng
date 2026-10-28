@@ -7,7 +7,7 @@
 // in an opaque-origin frame and kills the ad before it renders.
 // Banners load only when scrolled near, so they don't slow down the first paint or the player.
 // The banner page is public/ad.html on our own domain: Adsterra only fills requests whose referrer
-// is the registered site (animegng.pages.dev), which an inline srcdoc frame doesn't send.
+// is a registered site (animegng.com / animegng.pages.dev), which an inline srcdoc frame doesn't send.
 // On localhost the slots stay empty.
 import { useEffect, useRef, useState } from "react"
 import { cn } from "@/lib/utils"

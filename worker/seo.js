@@ -6,7 +6,7 @@
 //
 // Used by both the Pages middleware (functions/_middleware.js) and the Worker (worker/index.js).
 
-export const SITE = 'https://animegng.pages.dev';
+export const SITE = 'https://animegng.com';
 const NAME = 'AnimeGang';
 const DEFAULT_DESC = 'Watch anime online free in HD with English sub and dub. Browse trending, seasonal and top-rated anime, episode guides and the weekly airing schedule on AnimeGang.';
 const DEFAULT_IMAGE = `${SITE}/logo.png`;

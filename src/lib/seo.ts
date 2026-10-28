@@ -5,7 +5,7 @@ import { useEffect } from "react"
 import type { Title } from "./api"
 import { titleOf } from "./format"
 
-export const SITE = "https://animegng.pages.dev"
+export const SITE = "https://animegng.com"
 export const SITE_NAME = "AnimeGang"
 
 // Same algorithm as worker/seo.js slugify: keep them in sync so canonical URLs match.
