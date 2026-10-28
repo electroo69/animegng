@@ -6,6 +6,7 @@ import React, {
 } from "react"
 
 import { cn } from "@/lib/utils"
+import { LITE } from "@/lib/lite"
 
 interface MousePosition {
   x: number
@@ -75,7 +76,7 @@ type Circle = {
   magnetism: number
 }
 
-export const Particles: React.FC<ParticlesProps> = ({
+const ParticlesAnimated: React.FC<ParticlesProps> = ({
   className = "",
   quantity = 100,
   staticity = 50,
@@ -317,3 +318,5 @@ export const Particles: React.FC<ParticlesProps> = ({
     </div>
   )
 }
+
+export const Particles: React.FC<ParticlesProps> = (props) => (LITE ? null : <ParticlesAnimated {...props} />)

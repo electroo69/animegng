@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react"
 import type { CSSProperties, HTMLAttributes } from "react"
 
 import { cn } from "@/lib/utils"
+import { LITE } from "@/lib/lite"
 
 const ANIMATION_DURATION_SECONDS = 15
 const GRID_HEIGHT_RATIO = 3
@@ -467,7 +468,7 @@ function createFallbackGridStyle(
   }
 }
 
-export function RetroGrid({
+function RetroGridAnimated({
   className,
   angle = 65,
   cellSize = 60,
@@ -863,4 +864,8 @@ export function RetroGrid({
       <div className="absolute inset-0 bg-linear-to-t from-white to-transparent to-90% dark:from-black" />
     </div>
   )
+}
+
+export function RetroGrid(props: RetroGridProps) {
+  return LITE ? null : <RetroGridAnimated {...props} />
 }

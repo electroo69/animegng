@@ -2,6 +2,7 @@ import { useEffect, useRef, type ComponentPropsWithoutRef } from "react"
 import { useInView, useMotionValue, useSpring } from "motion/react"
 
 import { cn } from "@/lib/utils"
+import { LITE } from "@/lib/lite"
 
 interface NumberTickerProps extends ComponentPropsWithoutRef<"span"> {
   value: number
@@ -11,7 +12,7 @@ interface NumberTickerProps extends ComponentPropsWithoutRef<"span"> {
   decimalPlaces?: number
 }
 
-export function NumberTicker({
+function NumberTickerAnimated({
   value,
   startValue = 0,
   direction = "up",
@@ -67,6 +68,16 @@ export function NumberTicker({
       {...props}
     >
       {startValue}
+    </span>
+  )
+}
+
+export function NumberTicker(props: NumberTickerProps) {
+  if (!LITE) return <NumberTickerAnimated {...props} />
+  const { value, decimalPlaces = 0, className, startValue: _s, direction: _d, delay: _l, ...rest } = props
+  return (
+    <span className={cn("inline-block tracking-wider text-black tabular-nums dark:text-white", className)} {...rest}>
+      {Intl.NumberFormat("en-US", { minimumFractionDigits: decimalPlaces, maximumFractionDigits: decimalPlaces }).format(value)}
     </span>
   )
 }

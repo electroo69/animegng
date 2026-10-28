@@ -1,6 +1,7 @@
 import { motion, type MotionStyle, type Transition } from "motion/react"
 
 import { cn } from "@/lib/utils"
+import { LITE } from "@/lib/lite"
 
 interface BorderBeamProps {
   /**
@@ -49,7 +50,7 @@ interface BorderBeamProps {
   borderWidth?: number
 }
 
-export const BorderBeam = ({
+const BorderBeamAnimated = ({
   className,
   size = 50,
   delay = 0,
@@ -103,3 +104,5 @@ export const BorderBeam = ({
     </div>
   )
 }
+
+export const BorderBeam = (props: BorderBeamProps) => (LITE ? null : <BorderBeamAnimated {...props} />)

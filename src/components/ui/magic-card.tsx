@@ -8,6 +8,7 @@ import {
 import { useTheme } from "next-themes"
 
 import { cn } from "@/lib/utils"
+import { LITE } from "@/lib/lite"
 
 interface MagicCardBaseProps {
   children?: React.ReactNode
@@ -52,7 +53,7 @@ function isOrbMode(props: MagicCardProps): props is MagicCardOrbProps {
   return props.mode === "orb"
 }
 
-export function MagicCard(props: MagicCardProps) {
+function MagicCardAnimated(props: MagicCardProps) {
   const {
     children,
     className,
@@ -217,4 +218,9 @@ export function MagicCard(props: MagicCardProps) {
       <div className="relative z-40">{children}</div>
     </motion.div>
   )
+}
+
+export function MagicCard(props: MagicCardProps) {
+  if (LITE) return <div className={cn("relative overflow-hidden rounded-[inherit] border border-white/[0.07] bg-background", props.className)}>{props.children}</div>
+  return <MagicCardAnimated {...props} />
 }

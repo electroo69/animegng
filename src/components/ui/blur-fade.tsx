@@ -1,4 +1,5 @@
 "use client"
+import { LITE } from "@/lib/lite"
 
 import { useRef } from "react"
 import {
@@ -31,7 +32,7 @@ interface BlurFadeProps extends MotionProps {
 const getFilter = (v: Variants[string]) =>
   typeof v === "function" ? undefined : v.filter
 
-export function BlurFade({
+function BlurFadeAnimated({
   children,
   className,
   variant,
@@ -91,4 +92,9 @@ export function BlurFade({
       </motion.div>
     </AnimatePresence>
   )
+}
+
+export function BlurFade(props: BlurFadeProps) {
+  if (LITE) return <div className={props.className}>{props.children}</div>
+  return <BlurFadeAnimated {...props} />
 }
