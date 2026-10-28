@@ -93,7 +93,10 @@ async function home(env, ctx) {
       { '@context': 'https://schema.org', '@type': 'Organization', name: NAME, url: SITE + '/', logo: DEFAULT_IMAGE },
       itemList('Trending anime', d.trending),
     ],
-    body: `<h1>${NAME}: watch anime online free in HD</h1><p>${esc(DEFAULT_DESC)}</p>
+    body: `${(() => {
+      const h = d.trending.find((a) => a.banner_image);
+      return h ? `<a class="pr-hero" href="${animePath(h)}"><img src="${esc(h.banner_image)}" alt="" fetchpriority="high"><span class="pr-hero-t">${esc(titleOf(h.title))}</span></a>` : '';
+    })()}<h1>${NAME}: watch anime online free in HD</h1><p>${esc(DEFAULT_DESC)}</p>
 <h2>Trending now</h2>${cardList(d.trending)}
 <h2>Airing this season (${esc(s)})</h2>${cardList(d.seasonal)}
 <h2>Latest episodes</h2><ul>${d.latest_aired.slice(0, 15).map((e) => `<li><a href="/watch/${e.anime.id}/${e.episode}">${esc(titleOf(e.anime.title))} episode ${e.episode}</a></li>`).join('')}</ul>
@@ -245,7 +248,7 @@ async function pageFor(url, env, ctx) {
 
 // ------------------------------------------------------------------ HTML injection
 
-const PRERENDER_STYLE = '<style>#prerender{max-width:1100px;margin:0 auto;padding:96px 20px 40px;color:#c8c8d0;font:15px/1.6 system-ui,sans-serif}#prerender a{color:#ff6b74}#prerender h1{color:#fff;font-size:28px;line-height:1.2}#prerender h2{color:#fff;font-size:19px;margin-top:28px}</style>';
+const PRERENDER_STYLE = '<style>#prerender{max-width:1100px;margin:0 auto;padding:96px 20px 40px;color:#c8c8d0;font:15px/1.6 system-ui,sans-serif}#prerender a{color:#ff6b74}#prerender h1{color:#fff;font-size:28px;line-height:1.2}#prerender h2{color:#fff;font-size:19px;margin-top:28px}.pr-hero{position:relative;display:block;margin:-96px calc(50% - 50vw) 24px;height:min(82vh,860px);min-height:580px;overflow:hidden;background:#0b0b10}.pr-hero img{width:100%;height:100%;object-fit:cover;object-position:center 25%}.pr-hero:after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,#0b0b10,rgba(11,11,16,.55) 60%,transparent),linear-gradient(0deg,#0b0b10,transparent 40%)}.pr-hero-t{position:absolute;left:max(20px,calc(50vw - 780px));bottom:120px;z-index:1;max-width:640px;color:#fff;font:900 clamp(32px,5vw,60px)/1.05 system-ui,sans-serif}</style>';
 
 function headTags(page) {
   const url = SITE + page.canonical;
