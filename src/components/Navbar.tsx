@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react"
+import { UserMenu } from "@/components/social/UserMenu"
 import { Link, NavLink } from "react-router-dom"
 import { CalendarDays, Compass, Flame, Home, Menu, Search, Sparkles, Trophy } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -101,6 +102,7 @@ export function Navbar() {
               Ctrl K
             </kbd>
           </button>
+          <UserMenu />
         </div>
       </header>
       <SearchCommand open={searchOpen} onOpenChange={setSearchOpen} />

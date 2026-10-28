@@ -102,3 +102,22 @@ releases after it finishes; it must never overlap the background runner.
 Mappings live in `public/embeds/<anilist-id>.json` as static assets. They contain only
 provider-returned HTTPS FlixCloud URLs. A successful response is not an individual
 playback test. Full catalog discovery does not imply full playable coverage.
+
+## Accounts & community
+
+Accounts, synced history, playlists, subscriptions, likes, comments, live comments and watch
+parties run in the Worker (`worker/social/`), backed by the D1 database `animegng`
+(`migrations/`) and a `PartyRoom` Durable Object per watch party. The Pages site forwards
+`/api/u/*` (WebSockets included) to the Worker, so the session cookie stays on animegng.com.
+
+- **Schema changes:** add a file to `migrations/`, then `npx wrangler d1 migrations apply animegng --remote`.
+- **Deploying the Worker:** `npx wrangler deploy` (Pages deploys itself on push).
+- **Google / Discord sign-in:** create OAuth apps with redirect URI
+  `https://animegng.com/api/u/auth/google/callback` (or `/discord/callback`), then
+  `npx wrangler secret put GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` (same for `DISCORD_`).
+  The buttons appear automatically once both are set.
+- **Make someone an admin** (can delete any comment, ban users):
+  `npx wrangler d1 execute animegng --remote --command "UPDATE users SET is_admin = 1 WHERE username = 'NAME'"`
+- **New-episode notifications** run hourly (cron `7 * * * *`).
+- **Local development:** `npx wrangler d1 migrations apply animegng --local`, run `npx wrangler dev --port 8787 --local`,
+  then the site with `SOCIAL_URL=http://localhost:8787` so test accounts stay in the local database.

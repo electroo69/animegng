@@ -2,12 +2,16 @@ import { useEffect, useMemo, useRef, useState } from "react"
 import { animeHref, clip, SITE_NAME, useHead } from "@/lib/seo"
 import { LeaderboardAd } from "@/components/AdSlot"
 import { Link, useNavigate, useParams } from "react-router-dom"
-import { AlertTriangle, Captions, ChevronLeft, ChevronRight, Clock, Lightbulb, Loader2, Mic, Search, Server as ServerIcon, Star } from "lucide-react"
+import { AlertTriangle, Captions, ChevronLeft, ChevronRight, Clock, Lightbulb, Loader2, Mic, Search, Server as ServerIcon, Star, Users } from "lucide-react"
 import { AnimeCard } from "@/components/AnimeCard"
 import { Container, Rail, Section, SectionHeader } from "@/components/Section"
 import { BorderBeam } from "@/components/ui/border-beam"
 import { VideoPlayer } from "@/components/VideoPlayer"
 import { AmbientGlow } from "@/components/AmbientGlow"
+import { useRequireAuth } from "@/components/social/AuthDialog"
+import { Comments, EpisodeVotes } from "@/components/social/Comments"
+import { LiveCommentsOverlay } from "@/components/social/LiveComments"
+import { sapi, storedAnime, useLiveComments, type StoredAnime } from "@/lib/social"
 import { embedSrc, useAnime, useEpisodes, useWatch, type Episode, type Server } from "@/lib/api"
 import { useDirectStream, usePrefetchDirect } from "@/lib/direct"
 import { cap, countdown, formatLabel, score, statusLabel, stripHtml, titleOf } from "@/lib/format"
@@ -27,6 +31,22 @@ export default function Watch() {
   const [videoEl, setVideoEl] = useState<HTMLVideoElement | null>(null)
   const frameRef = useRef<HTMLIFrameElement>(null)
   const lastSave = useRef(0)
+  const live = useLiveComments(id, ep, prefs.liveComments)
+  const requireAuth = useRequireAuth()
+  const [creatingParty, setCreatingParty] = useState(false)
+  const startParty = () =>
+    requireAuth(async () => {
+      if (!fresh?.anime && !anime.data) return
+      setCreatingParty(true)
+      try {
+        const room = await sapi<{ id: string }>("/rooms", {
+          body: { anime: storedAnime((anime.data ?? fresh!.anime) as StoredAnime), episode: ep, lang, position: videoEl?.currentTime ?? 0 },
+        })
+        navigate(`/party/${room.id}`)
+      } finally {
+        setCreatingParty(false)
+      }
+    }, "Sign in to host a watch party.")
   const prefetch = usePrefetchDirect()
   const prefetchedNext = useRef(0)
 
@@ -182,7 +202,9 @@ export default function Watch() {
                   }}
                   onFatalError={() => setDirectFailed(lang)}
                   onVideo={setVideoEl}
-                />
+                >
+                  <LiveCommentsOverlay items={live.data ?? []} video={videoEl} enabled={prefs.liveComments} />
+                </VideoPlayer>
               ) : src ? (
                 <iframe
                   key={src}
@@ -226,11 +248,22 @@ export default function Watch() {
               <Toggle on={prefs.skipIntro} onClick={() => update({ skipIntro: !prefs.skipIntro })}>Skip intro</Toggle>
               <Toggle on={prefs.skipOutro} onClick={() => update({ skipOutro: !prefs.skipOutro })}>Skip outro</Toggle>
               <Toggle on={prefs.ambient} onClick={() => update({ ambient: !prefs.ambient })}>Ambient</Toggle>
+              <Toggle on={prefs.liveComments} onClick={() => update({ liveComments: !prefs.liveComments })}>Live comments</Toggle>
               <button onClick={() => setDim(!dim)} className={cn("flex h-8 items-center gap-1.5 rounded-lg px-3 text-xs font-medium text-white/60 transition hover:bg-white/5 hover:text-white", dim && "text-amber-300")}>
                 <Lightbulb className="size-3.5" />
                 Lights
               </button>
-              <div className="ml-auto flex gap-1">
+              <div className="ml-auto flex flex-wrap gap-1">
+                <EpisodeVotes anime={id} ep={ep} />
+                <button
+                  onClick={startParty}
+                  disabled={creatingParty}
+                  title="Watch this episode together with friends"
+                  className="flex h-8 items-center gap-1.5 rounded-lg bg-brand-blue/20 px-3 text-xs font-semibold text-[#b3c0ff] transition hover:bg-brand-blue/30 disabled:opacity-50"
+                >
+                  <Users className="size-3.5" />
+                  Watch party
+                </button>
                 <NavBtn disabled={!prev} onClick={() => prev && navigate(`/watch/${id}/${prev}`)}>
                   <ChevronLeft className="size-4" /> Prev
                 </NavBtn>
@@ -287,6 +320,8 @@ export default function Watch() {
                 {current?.aired && <p className="mt-2 text-xs text-white/35">Aired {new Date(current.aired).toLocaleDateString(undefined, { dateStyle: "medium" })}</p>}
               </div>
             </div>
+
+            <Comments anime={id} ep={ep} currentTime={() => videoEl?.currentTime ?? 0} />
 
             <LeaderboardAd className="mt-10" />
           </div>

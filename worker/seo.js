@@ -311,6 +311,8 @@ Disallow: /native.html
 Disallow: /ad$
 Disallow: /native$
 Disallow: /embeds/
+Disallow: /party/
+Disallow: /library
 
 Sitemap: ${SITE}/sitemap.xml
 `;

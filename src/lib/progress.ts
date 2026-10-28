@@ -1,4 +1,5 @@
-// "Continue watching" history, kept in this browser only.
+// "Continue watching" history. Kept in this browser; when signed in, lib/social.ts mirrors every
+// change to the account (via setHistorySync) and merges the account's history back in.
 import { useSyncExternalStore } from "react"
 import type { AnimeCard } from "./api"
 
@@ -32,13 +33,33 @@ function write(list: HistoryEntry[]) {
   listeners.forEach((l) => l())
 }
 
+type HistorySync = { put: (e: HistoryEntry) => void; remove: (id: number) => void }
+let sync: HistorySync | null = null
+export const setHistorySync = (s: HistorySync | null) => {
+  sync = s
+}
+export const localHistory = () => snapshot
+
 export function recordWatch(entry: Omit<HistoryEntry, "updatedAt">) {
   const rest = snapshot.filter((e) => e.anime.id !== entry.anime.id)
-  write([{ ...entry, updatedAt: Date.now() }, ...rest].slice(0, 30))
+  const e = { ...entry, updatedAt: Date.now() }
+  write([e, ...rest].slice(0, 30))
+  sync?.put(e)
 }
 
 export function removeHistory(id: number) {
   write(snapshot.filter((e) => e.anime.id !== id))
+  sync?.remove(id)
+}
+
+// Merge entries from the account (newest wins per anime).
+export function mergeHistory(entries: HistoryEntry[]) {
+  const byId = new Map(snapshot.map((e) => [e.anime.id, e]))
+  for (const e of entries) {
+    const cur = byId.get(e.anime.id)
+    if (!cur || e.updatedAt > cur.updatedAt) byId.set(e.anime.id, e)
+  }
+  write([...byId.values()].sort((a, b) => b.updatedAt - a.updatedAt).slice(0, 30))
 }
 
 export const useHistory = () =>
@@ -63,10 +84,11 @@ export interface PlayerPrefs {
   skipIntro: boolean
   skipOutro: boolean
   ambient: boolean
+  liveComments: boolean
 }
 // v2: the default server became "Direct" (our own HLS player); older saved prefs defaulted to an embed.
 const PREF_KEY = "ag:player:v2"
-const defaults: PlayerPrefs = { lang: "sub", server: "Direct", autoplay: true, autoNext: true, skipIntro: false, skipOutro: false, ambient: true }
+const defaults: PlayerPrefs = { lang: "sub", server: "Direct", autoplay: true, autoNext: true, skipIntro: false, skipOutro: false, ambient: true, liveComments: true }
 
 export function loadPrefs(): PlayerPrefs {
   try {

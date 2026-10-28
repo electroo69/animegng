@@ -7,9 +7,16 @@ import { handleSeo } from '../worker/seo.js';
 const CANONICAL_HOST = 'animegng.com';
 const LEGACY_HOST = 'animegng.pages.dev';
 
+// Accounts, comments, likes and watch parties live in the Worker (D1 + Durable Objects). Forward
+// /api/u/* there, WebSocket upgrades included, so session cookies stay on this domain.
+const SOCIAL_ORIGIN = 'https://animegng.drop-share-free.workers.dev';
+
 export async function onRequest(context) {
   const { request, env } = context;
   const url = new URL(request.url);
+  if (url.pathname.startsWith('/api/u/')) {
+    return fetch(new Request(`${env.SOCIAL_ORIGIN || SOCIAL_ORIGIN}${url.pathname}${url.search}`, request), { redirect: 'manual' });
+  }
   if (url.hostname === LEGACY_HOST && !url.pathname.startsWith('/api') && (request.method === 'GET' || request.method === 'HEAD')) {
     url.hostname = CANONICAL_HOST;
     return Response.redirect(url.toString(), 301);

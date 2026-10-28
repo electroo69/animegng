@@ -1,4 +1,5 @@
 import { useState } from "react"
+import { SaveButton, SubscribeButton } from "@/components/social/LibraryButtons"
 import { animeHref, clip, genreHref, GENRES, SITE_NAME, useHead } from "@/lib/seo"
 import { LeaderboardAd, withNativeAds } from "@/components/AdSlot"
 import { WatchLink } from "@/components/WatchLink"
@@ -69,7 +70,7 @@ export default function AnimeDetail() {
               </div>
             </BlurFade>
 
-            <BlurFade delay={0.1} className="min-w-0 flex-1 text-center md:text-left">
+            <BlurFade delay={0.1} className="relative z-30 min-w-0 flex-1 text-center md:text-left">
               <div className="mb-3 flex flex-wrap justify-center gap-2 text-xs font-semibold md:justify-start">
                 <span className={cn("rounded-md px-2 py-1", a.status === "RELEASING" ? "bg-emerald-400/15 text-emerald-300" : "bg-white/10 text-white/80")}>{statusLabel(a.status)}</span>
                 {a.format && <span className="rounded-md bg-white/10 px-2 py-1 text-white/80">{formatLabel(a.format)}</span>}
@@ -111,6 +112,8 @@ export default function AnimeDetail() {
                     Trailer
                   </button>
                 )}
+                <SubscribeButton anime={a} />
+                <SaveButton anime={a} />
               </div>
               {a.next_airing_episode && (
                 <p className="mt-4 inline-flex items-center gap-2 rounded-lg bg-brand-blue/15 px-3 py-1.5 text-sm text-[#9fb0ff]">

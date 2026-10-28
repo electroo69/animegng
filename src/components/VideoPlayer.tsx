@@ -62,9 +62,11 @@ interface Props {
   onFatalError?: () => void
   /** Receives the underlying <video> element (e.g. for the ambient glow). */
   onVideo?: (video: HTMLVideoElement | null) => void
+  /** Overlay rendered inside the player (so it also shows in fullscreen), e.g. live comments. */
+  children?: React.ReactNode
 }
 
-export function VideoPlayer({ stream, poster, startAt = 0, autoplay, autoSkipIntro, autoSkipOutro, onProgress, onEnded, onFatalError, onVideo }: Props) {
+export function VideoPlayer({ stream, poster, startAt = 0, autoplay, autoSkipIntro, autoSkipOutro, onProgress, onEnded, onFatalError, onVideo, children }: Props) {
   const wrap = useRef<HTMLDivElement>(null)
   const video = useRef<HTMLVideoElement>(null)
   const hls = useRef<Hls | null>(null)
@@ -315,6 +317,8 @@ export function VideoPlayer({ stream, poster, startAt = 0, autoplay, autoSkipInt
           <track key={s.url} kind="subtitles" src={s.url} label={s.label} srcLang={s.label.slice(0, 2).toLowerCase()} />
         ))}
       </video>
+
+      <div className={cn("contents", !playing && "[&_.danmaku]:[animation-play-state:paused]")}>{children}</div>
 
       {waiting && !error && (
         <div className="pointer-events-none absolute inset-0 grid place-items-center">

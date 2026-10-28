@@ -265,3 +265,14 @@ video::-webkit-media-text-track-container {
 .player-ui-on video::-webkit-media-text-track-container {
   transform: translateY(-64px);
 }
+
+/* Live comments flying across the player. */
+.danmaku {
+  animation-name: danmaku;
+  animation-timing-function: linear;
+  animation-fill-mode: forwards;
+}
+@keyframes danmaku {
+  from { left: 100%; transform: translateX(0); }
+  to { left: 0; transform: translateX(-100%); }
+}

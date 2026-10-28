@@ -14,6 +14,8 @@ const Schedule = lazy(() => import("@/pages/Schedule"))
 const Browse = lazy(() => import("@/pages/Browse"))
 const GenrePage = lazy(() => import("@/pages/Collection").then((m) => ({ default: m.GenrePage })))
 const SeasonPage = lazy(() => import("@/pages/Collection").then((m) => ({ default: m.SeasonPage })))
+const Library = lazy(() => import("@/pages/Library"))
+const Party = lazy(() => import("@/pages/Party"))
 
 function ScrollToTop() {
   const { pathname } = useLocation()
@@ -40,6 +42,8 @@ export default function App() {
             <Route path="/browse/:kind" element={<Browse />} />
             <Route path="/genre/:slug" element={<GenrePage />} />
             <Route path="/season/:year/:season" element={<SeasonPage />} />
+            <Route path="/library" element={<Library />} />
+            <Route path="/party/:id" element={<Party />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </Suspense>
