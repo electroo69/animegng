@@ -95,12 +95,13 @@ function SettingsForm({ me }: { me: User }) {
           </div>
         </Card>
 
-        {providers.data?.email && (
+        {(providers.data?.email || me.email) && (
           <Card title="Email" desc="Used for sign-in links, password resets and new-episode emails. Never shown publicly." msg={sp.get("email") === "verified" && !emailAct.msg ? { ok: true, text: "Email confirmed." } : emailAct.msg}>
             <div className="flex gap-2">
               <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" className={input} aria-label="Email" />
-              <button disabled={emailAct.busy || !email || email === me.email} onClick={() => emailAct.run(async () => { await sapi("/me/email", { body: { email } }); return `We sent a confirmation link to ${email}.` })} className={primary}>{me.email ? "Change" : "Add"}</button>
+              <button disabled={emailAct.busy || !email || (email === me.email && me.email_verified) || !providers.data?.email} onClick={() => emailAct.run(async () => { await sapi("/me/email", { body: { email } }); return `We sent a confirmation link to ${email}.` })} className={primary}>{email === me.email && !me.email_verified ? "Resend confirmation" : me.email ? "Change" : "Add"}</button>
             </div>
+            {me.email && !me.email_verified && <p className="mt-2 text-xs text-amber-300/80">Not confirmed yet. We'll send a confirmation link once email is set up.</p>}
             {me.email && (
               <label className="mt-3 flex items-center gap-2 text-sm text-white/70">
                 <input type="checkbox" defaultChecked={me.email_notify} onChange={(e) => void sapi("/me", { method: "PATCH", body: { email_notify: e.target.checked } }).then(refresh)} className="accent-primary" />

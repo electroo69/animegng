@@ -16,7 +16,7 @@ export async function notifyNewEpisodes(env) {
   }
   for (const item of aired) {
     if (!wanted.has(item.anime.id) || new Date(item.aired_at).getTime() > now()) continue;
-    const { results: due } = await env.DB.prepare(`SELECT s.user_id, u.email, u.email_notify FROM subscriptions s JOIN users u ON u.id = s.user_id
+    const { results: due } = await env.DB.prepare(`SELECT s.user_id, u.email, u.email_notify, u.email_verified FROM subscriptions s JOIN users u ON u.id = s.user_id
       WHERE s.anime_id = ? AND s.last_notified_episode < ?`).bind(item.anime.id, item.episode).all();
     if (!due.length) continue;
     const payload = JSON.stringify({ anime_id: item.anime.id, episode: item.episode, title: item.anime.title, cover: item.anime.cover_image?.large });
@@ -28,7 +28,7 @@ export async function notifyNewEpisodes(env) {
     if (emailEnabled(env)) {
       const t = item.anime.title?.english || item.anime.title?.romaji || 'An anime you follow';
       const [subject, text, html] = emails.episode(t, item.episode, linkTo(env, `/watch/${item.anime.id}/${item.episode}`));
-      for (const d of due) if (d.email && d.email_notify) await sendEmail(env, d.email, subject, text, html);
+      for (const d of due) if (d.email && d.email_verified && d.email_notify) await sendEmail(env, d.email, subject, text, html);
     }
   }
 }

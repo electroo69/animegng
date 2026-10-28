@@ -31,6 +31,7 @@ function AuthDialog({ open, reason, onOpenChange }: { open: boolean; reason?: st
   const [sent, setSent] = useState<string | null>(null)
   const [emailError, setEmailError] = useState<string | null>(null)
   const [username, setUsername] = useState("")
+  const [regEmail, setRegEmail] = useState("")
   const [password, setPassword] = useState("")
   const { login, register } = useAuthActions()
   const providers = useProviders()
@@ -50,7 +51,7 @@ function AuthDialog({ open, reason, onOpenChange }: { open: boolean; reason?: st
   const submit = (e: React.FormEvent) => {
     e.preventDefault()
     action.mutate(
-      { username: username.trim(), password },
+      { username: username.trim(), password, ...(mode === "register" ? { email: regEmail.trim() } : {}) },
       {
         onSuccess: () => {
           setPassword("")
@@ -104,10 +105,20 @@ function AuthDialog({ open, reason, onOpenChange }: { open: boolean; reason?: st
             autoFocus
             value={username}
             onChange={(e) => setUsername(e.target.value)}
-            placeholder="Username"
+            placeholder={mode === "login" ? "Username or email" : "Username"}
             autoComplete="username"
             className="h-11 w-full rounded-xl border border-white/10 bg-white/[0.04] px-4 text-sm outline-none focus:border-primary/60"
           />
+          {mode === "register" && (
+            <input
+              type="email"
+              value={regEmail}
+              onChange={(e) => setRegEmail(e.target.value)}
+              placeholder="Email"
+              autoComplete="email"
+              className="h-11 w-full rounded-xl border border-white/10 bg-white/[0.04] px-4 text-sm outline-none focus:border-primary/60"
+            />
+          )}
           <input
             type="password"
             value={password}
@@ -117,7 +128,7 @@ function AuthDialog({ open, reason, onOpenChange }: { open: boolean; reason?: st
             className="h-11 w-full rounded-xl border border-white/10 bg-white/[0.04] px-4 text-sm outline-none focus:border-primary/60"
           />
           {action.error && <p className="text-sm text-red-400">{action.error.message}</p>}
-          <button disabled={action.isPending || !username || !password} className="flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-primary text-sm font-semibold text-white transition hover:bg-primary/85 disabled:opacity-50">
+          <button disabled={action.isPending || !username || !password || (mode === "register" && !regEmail)} className="flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-primary text-sm font-semibold text-white transition hover:bg-primary/85 disabled:opacity-50">
             {action.isPending && <Loader2 className="size-4 animate-spin" />}
             {mode === "login" ? "Sign in" : "Create account"}
           </button>

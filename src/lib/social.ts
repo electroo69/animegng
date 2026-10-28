@@ -11,6 +11,7 @@ export interface User {
   avatar: string | null
   is_admin: boolean
   email?: string | null
+  email_verified?: boolean
   email_notify?: boolean
   has_password?: boolean
 }
@@ -68,7 +69,7 @@ export function useAuthActions() {
   }
   return {
     login: useMutation({ mutationFn: (v: { username: string; password: string }) => sapi<{ user: User }>("/auth/login", { body: v }), onSuccess: done }),
-    register: useMutation({ mutationFn: (v: { username: string; password: string }) => sapi<{ user: User }>("/auth/register", { body: v }), onSuccess: done }),
+    register: useMutation({ mutationFn: (v: { username: string; password: string; email?: string }) => sapi<{ user: User }>("/auth/register", { body: v }), onSuccess: done }),
     logout: useMutation({
       mutationFn: () => sapi("/auth/logout", { method: "POST" }),
       onSuccess: () => {

@@ -44,18 +44,28 @@ async function startSession(env, userId) {
 }
 
 const USERNAME = /^[a-zA-Z0-9_]{3,20}$/;
+const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export async function register(request, env, data) {
   await rateLimit(env, `register:${clientIp(request, env)}`, 5, 3600);
   const username = String(data.username || '').trim();
+  const email = String(data.email || '').trim().toLowerCase();
   const password = String(data.password || '');
   if (!USERNAME.test(username)) fail(400, 'Username must be 3–20 letters, numbers or underscores');
+  if (!EMAIL.test(email) || email.length > 200) fail(400, 'Enter a valid email address');
   if (password.length < 8 || password.length > 200) fail(400, 'Password must be at least 8 characters');
   if (await env.DB.prepare('SELECT 1 FROM users WHERE username = ?').bind(username).first()) fail(409, 'That username is taken');
+  if (await env.DB.prepare('SELECT 1 FROM users WHERE email = ?').bind(email).first()) fail(409, 'That email already has an account');
   const salt = crypto.getRandomValues(new Uint8Array(16));
   const id = uid();
-  await env.DB.prepare('INSERT INTO users (id, username, display_name, password_hash, password_salt, created_at) VALUES (?, ?, ?, ?, ?, ?)')
-    .bind(id, username, username, await hashPassword(password, salt), b64(salt), now()).run();
+  await env.DB.prepare('INSERT INTO users (id, username, display_name, email, password_hash, password_salt, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)')
+    .bind(id, username, username, email, await hashPassword(password, salt), b64(salt), now()).run();
+  // Confirm the address when email sending is on; until then it's stored unconfirmed.
+  if (emailEnabled(env)) {
+    const t = await issueToken(env, id, 'verify', email);
+    const [subject, text, html] = emails.verify(linkTo(env, `/api/u/me/email/verify?t=${t}`));
+    await sendEmail(env, email, subject, text, html);
+  }
   const user = await env.DB.prepare('SELECT * FROM users WHERE id = ?').bind(id).first();
   return json({ user: publicUser(user) }, 201, { 'Set-Cookie': await startSession(env, id) });
 }
@@ -64,7 +74,7 @@ export async function login(request, env, data) {
   const name = String(data.username || '').trim().toLowerCase();
   await rateLimit(env, `login-ip:${clientIp(request, env)}`, 10, 900);
   await rateLimit(env, `login-user:${name}`, 20, 900);
-  const user = await env.DB.prepare('SELECT * FROM users WHERE username = ?').bind(String(data.username || '').trim()).first();
+  const user = await env.DB.prepare(`SELECT * FROM users WHERE ${name.includes('@') ? 'email' : 'username'} = ?`).bind(name).first();
   const ok = user?.password_hash && sameHash(await hashPassword(String(data.password || ''), unb64(user.password_salt)), user.password_hash);
   if (!ok) fail(401, 'Wrong username or password');
   if (user.banned) fail(403, 'This account is banned');
@@ -156,7 +166,7 @@ export async function magicVerify(request, env) {
 export async function requestEmailVerify(request, env, me, data) {
   if (!emailEnabled(env)) fail(503, 'Email is not available yet');
   const email = String(data.email || '').trim().toLowerCase();
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 200) fail(400, 'Enter a valid email address');
+  if (!EMAIL.test(email) || email.length > 200) fail(400, 'Enter a valid email address');
   await rateLimit(env, `verify:${me.id}`, 5, 3600);
   if (await env.DB.prepare('SELECT 1 FROM users WHERE email = ? AND id != ?').bind(email, me.id).first()) fail(409, 'That email is used by another account');
   const t = await issueToken(env, me.id, 'verify', email);
@@ -167,7 +177,7 @@ export async function requestEmailVerify(request, env, me, data) {
 
 export async function confirmEmail(request, env) {
   const { user_id, email } = await useToken(env, new URL(request.url).searchParams.get('t'), 'verify');
-  await env.DB.prepare('UPDATE users SET email = ? WHERE id = ?').bind(email, user_id).run();
+  await env.DB.prepare('UPDATE users SET email = ?, email_verified = 1 WHERE id = ?').bind(email, user_id).run();
   return new Response(null, { status: 302, headers: { Location: `${publicOrigin(env)}/settings?email=verified` } });
 }
 
