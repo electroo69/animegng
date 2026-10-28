@@ -23,7 +23,8 @@ export function AnimeCard({ anime, rank, className }: { anime: Card; rank?: numb
     >
       <div className="relative aspect-[2/3] overflow-hidden rounded-xl bg-white/[0.04] ring-1 ring-white/[0.07] transition duration-500 group-hover/card:-translate-y-1 group-focus-visible/card:ring-2 group-focus-visible/card:ring-primary">
         <img
-          src={anime.cover_image.extra_large}
+          src={anime.cover_image.large || anime.cover_image.extra_large}
+          decoding="async"
           alt={titleOf(anime.title)}
           loading="lazy"
           className="size-full object-cover transition duration-700 ease-out group-hover/card:scale-[1.07]"
@@ -78,7 +79,8 @@ export function EpisodeCard({ item }: { item: AiredItem }) {
     <WatchLink to={`/watch/${a.id}/${item.episode}`} className="group/ep block">
       <div className="relative aspect-video overflow-hidden rounded-xl bg-white/[0.04] ring-1 ring-white/[0.07] transition duration-500 group-hover/ep:shadow-[0_20px_50px_-20px_rgba(43,75,255,0.6)]">
         <img
-          src={a.banner_image ?? a.cover_image.extra_large}
+          src={a.banner_image ?? a.cover_image.large}
+          decoding="async"
           alt=""
           loading="lazy"
           className="size-full object-cover transition duration-700 group-hover/ep:scale-105"

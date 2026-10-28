@@ -87,6 +87,7 @@ async function home(env, ctx) {
     title: `${NAME} — Watch Anime Online Free in HD (Sub & Dub)`,
     description: DEFAULT_DESC,
     canonical: '/',
+    preload: d.trending.find((a) => a.banner_image)?.banner_image,
     jsonld: [
       { '@context': 'https://schema.org', '@type': 'WebSite', name: NAME, url: SITE + '/', potentialAction: { '@type': 'SearchAction', target: `${SITE}/search?q={search_term_string}`, 'query-input': 'required name=search_term_string' } },
       { '@context': 'https://schema.org', '@type': 'Organization', name: NAME, url: SITE + '/', logo: DEFAULT_IMAGE },
@@ -264,6 +265,7 @@ function headTags(page) {
     `<meta name="twitter:description" content="${esc(page.description)}">`,
     `<meta name="twitter:image" content="${esc(image)}">`,
     ...page.jsonld.map((j) => `<script type="application/ld+json">${JSON.stringify(j).replace(/</g, '\\u003c')}</script>`),
+    ...(page.preload ? [`<link rel="preload" as="image" href="${esc(page.preload)}" fetchpriority="high">`] : []),
     PRERENDER_STYLE,
   ].join('\n');
 }

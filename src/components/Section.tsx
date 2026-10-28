@@ -1,4 +1,4 @@
-import { useRef, type ReactNode } from "react"
+import { useEffect, useRef, useState, type ReactNode } from "react"
 import { Link } from "react-router-dom"
 import { ChevronLeft, ChevronRight } from "lucide-react"
 import { BlurFade } from "@/components/ui/blur-fade"
@@ -61,4 +61,19 @@ export function Rail({ children, className }: { children: ReactNode; className?:
 
 export function Container({ children, className }: { children: ReactNode; className?: string }) {
   return <div className={cn("mx-auto w-full max-w-[1600px] px-4 sm:px-6 lg:px-10", className)}>{children}</div>
+}
+
+// Renders children only once they're near the viewport, so heavy below-the-fold widgets
+// (WebGL backgrounds, animated counters) don't cost anything during the first load.
+export function WhenVisible({ children, minHeight = 200 }: { children: ReactNode; minHeight?: number }) {
+  const ref = useRef<HTMLDivElement>(null)
+  const [show, setShow] = useState(false)
+  useEffect(() => {
+    const el = ref.current
+    if (!el || show) return
+    const io = new IntersectionObserver(([e]) => e.isIntersecting && setShow(true), { rootMargin: "400px" })
+    io.observe(el)
+    return () => io.disconnect()
+  }, [show])
+  return <div ref={ref} style={show ? undefined : { minHeight }}>{show && children}</div>
 }

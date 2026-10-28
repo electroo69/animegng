@@ -38,7 +38,7 @@ export function HeroSpotlight({ items }: { items: AnimeCard[] }) {
 
   if (!cur) return <div className="h-[78vh] min-h-[560px] animate-pulse bg-white/[0.03]" />
 
-  const bg = art(detail, "Fanart") ?? cur.banner_image!
+  const bg = cur.banner_image!
   const logo = detail?.id === cur.id ? art(detail, "Clearlogo") : undefined
   const desc = detail?.id === cur.id ? stripHtml(detail.description) : ""
   const eps = availableEpisodes(cur)
@@ -50,7 +50,7 @@ export function HeroSpotlight({ items }: { items: AnimeCard[] }) {
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
     >
-      <AnimatePresence mode="sync">
+      <AnimatePresence mode="sync" initial={false}>
         <motion.div
           key={cur.id + bg}
           initial={{ opacity: 0, scale: 1.08 }}
@@ -59,7 +59,7 @@ export function HeroSpotlight({ items }: { items: AnimeCard[] }) {
           transition={{ opacity: { duration: 1 }, scale: { duration: INTERVAL / 1000 + 1, ease: "linear" } }}
           className="absolute inset-0"
         >
-          <img src={bg} alt="" className="size-full object-cover object-[center_25%]" />
+          <img src={bg} alt="" fetchPriority={i === 0 ? "high" : "auto"} decoding="async" className="size-full object-cover object-[center_25%]" />
         </motion.div>
       </AnimatePresence>
 
@@ -68,10 +68,10 @@ export function HeroSpotlight({ items }: { items: AnimeCard[] }) {
       <div className="absolute inset-0 bg-gradient-to-t from-background via-background/10 to-background/50" />
       <div className="absolute -bottom-40 -left-40 size-[36rem] rounded-full bg-brand-red/20 blur-[140px]" />
       <div className="absolute -right-32 -bottom-52 size-[30rem] rounded-full bg-brand-blue/20 blur-[140px]" />
-      <Particles className="absolute inset-0" quantity={60} ease={70} size={0.5} color="#ffffff" refresh={false} />
+      <Particles className="absolute inset-0 hidden md:block" quantity={30} ease={70} size={0.5} color="#ffffff" refresh={false} />
 
       <div className="relative mx-auto flex h-full max-w-[1600px] flex-col justify-end px-4 pb-28 sm:px-6 lg:px-10 lg:pb-32">
-        <AnimatePresence mode="wait">
+        <AnimatePresence mode="wait" initial={false}>
           <motion.div
             key={cur.id}
             initial={{ opacity: 0, y: 24, filter: "blur(8px)" }}

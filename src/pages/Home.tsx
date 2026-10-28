@@ -5,7 +5,7 @@ import { WatchLink } from "@/components/WatchLink"
 import { CalendarDays, Play, X } from "lucide-react"
 import { HeroSpotlight } from "@/components/HeroSpotlight"
 import { AnimeCard, CardSkeleton, EpisodeCard } from "@/components/AnimeCard"
-import { Container, Rail, Section, SectionHeader } from "@/components/Section"
+import { Container, Rail, Section, SectionHeader, WhenVisible } from "@/components/Section"
 import { AiringToday, TopTen } from "@/components/Sidebar"
 import { Marquee } from "@/components/ui/marquee"
 import { NumberTicker } from "@/components/ui/number-ticker"
@@ -30,7 +30,7 @@ export default function Home() {
       <HeroSpotlight items={data?.trending ?? []} />
 
       <div className="relative z-10 -mt-6 border-y border-white/[0.06] bg-background/60 py-3 backdrop-blur-md">
-        <Marquee pauseOnHover className="[--duration:45s] [--gap:0.75rem]">
+        <Marquee pauseOnHover repeat={2} className="[--duration:45s] [--gap:0.75rem]">
           {GENRES.map((g) => (
             <Link
               key={g}
@@ -85,7 +85,9 @@ export default function Home() {
           </Rail>
         </Section>
 
-        <ScheduleBanner />
+        <WhenVisible minHeight={260}>
+          <ScheduleBanner />
+        </WhenVisible>
 
         <Section>
           <SectionHeader eyebrow="Coming soon" title="Most Anticipated" href="/browse/upcoming" />
@@ -113,7 +115,7 @@ function ContinueWatching() {
           <div key={h.anime.id} className="group/cw relative w-[78vw] shrink-0 snap-start sm:w-[320px]">
             <WatchLink to={`/watch/${h.anime.id}/${h.episode}`} className="block">
               <div className="relative aspect-video overflow-hidden rounded-xl ring-1 ring-white/[0.08]">
-                <img src={h.thumbnail ?? h.anime.banner_image ?? h.anime.cover_image.extra_large} alt="" className="size-full object-cover transition duration-700 group-hover/cw:scale-105" loading="lazy" />
+                <img src={h.thumbnail ?? h.anime.banner_image ?? h.anime.cover_image.large} alt="" className="size-full object-cover transition duration-700 group-hover/cw:scale-105" loading="lazy" />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
                 <div className="absolute inset-0 grid place-items-center opacity-0 transition group-hover/cw:opacity-100">
                   <span className="grid size-12 place-items-center rounded-full bg-primary">

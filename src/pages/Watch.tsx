@@ -292,7 +292,7 @@ export default function Watch() {
             <div className="mt-6 flex flex-col gap-5 sm:flex-row">
               {a && (
                 <Link to={a ? animeHref(a) : `/anime/${id}`} className="w-28 shrink-0 self-start">
-                  <img src={a.cover_image.extra_large} alt="" className="aspect-[2/3] w-full rounded-xl object-cover ring-1 ring-white/10" />
+                  <img src={a.cover_image.large || a.cover_image.extra_large} alt="" className="aspect-[2/3] w-full rounded-xl object-cover ring-1 ring-white/10" />
                 </Link>
               )}
               <div className="min-w-0">
