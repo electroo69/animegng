@@ -26,7 +26,7 @@ export function ConsentBanner() {
   return (
     <div className="fixed inset-x-3 bottom-3 z-[70] mx-auto flex max-w-2xl flex-col gap-3 rounded-2xl border border-white/10 bg-popover/95 p-4 text-sm shadow-2xl backdrop-blur-xl sm:flex-row sm:items-center">
       <p className="flex-1 text-white/70">
-        We use a cookie to keep you signed in and, if you allow it, analytics to see which pages people use. <Link to="/privacy" className="text-primary hover:underline">Privacy policy</Link>
+        We use a cookie to keep you signed in and, if you allow it, analytics to see which pages people use. <Link to="/privacy" className="text-primary underline underline-offset-2">Privacy policy</Link>
       </p>
       <div className="flex shrink-0 gap-2">
         <button onClick={() => decide("no")} className="h-9 rounded-lg border border-white/15 px-4 font-semibold text-white/80 hover:bg-white/5">Essential only</button>

@@ -58,7 +58,7 @@ function TopRow({ anime, rank }: { anime: AnimeCard; rank: number }) {
         >
           {String(rank).padStart(2, "0")}
         </span>
-        <img src={anime.cover_image.large} alt="" loading="lazy" className="h-14 w-10 shrink-0 rounded-md object-cover ring-1 ring-white/10" />
+        <img src={anime.cover_image.medium || anime.cover_image.large} alt="" loading="lazy" className="h-14 w-10 shrink-0 rounded-md object-cover ring-1 ring-white/10" />
         <div className="min-w-0 flex-1">
           <p className="line-clamp-1 text-[13px] font-medium text-white/90 group-hover:text-white">{titleOf(anime.title)}</p>
           <p className="mt-1 flex items-center gap-2 text-[11px] text-white/45">

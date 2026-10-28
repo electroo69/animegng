@@ -1,19 +1,19 @@
+import { lazy, Suspense } from "react"
 import { Link } from "react-router-dom"
 import { genreHref, SITE_NAME, useHead } from "@/lib/seo"
 import { AdSlot, LeaderboardAd, withNativeAds } from "@/components/AdSlot"
 import { WatchLink } from "@/components/WatchLink"
-import { CalendarDays, Play, X } from "lucide-react"
+import { Play, X } from "lucide-react"
 import { HeroSpotlight } from "@/components/HeroSpotlight"
 import { AnimeCard, CardSkeleton, EpisodeCard } from "@/components/AnimeCard"
 import { Container, Rail, Section, SectionHeader, WhenVisible } from "@/components/Section"
 import { AiringToday, TopTen } from "@/components/Sidebar"
 import { Marquee } from "@/components/ui/marquee"
-import { NumberTicker } from "@/components/ui/number-ticker"
-import { RetroGrid } from "@/components/ui/retro-grid"
-import { WordRotate } from "@/components/ui/word-rotate"
-import { useHome, useSchedule } from "@/lib/api"
+import { useHome } from "@/lib/api"
 import { cap, titleOf } from "@/lib/format"
 import { removeHistory, useHistory } from "@/lib/progress"
+
+const ScheduleBanner = lazy(() => import("@/components/ScheduleBanner"))
 
 const GENRES = ["Action", "Adventure", "Comedy", "Drama", "Fantasy", "Horror", "Mecha", "Music", "Mystery", "Psychological", "Romance", "Sci-Fi", "Slice of Life", "Sports", "Supernatural", "Thriller", "Mahou Shoujo"]
 
@@ -86,7 +86,9 @@ export default function Home() {
         </Section>
 
         <WhenVisible minHeight={260}>
-          <ScheduleBanner />
+          <Suspense fallback={<div className="min-h-[260px]" />}>
+            <ScheduleBanner />
+          </Suspense>
         </WhenVisible>
 
         <Section>
@@ -144,40 +146,6 @@ function ContinueWatching() {
           </div>
         ))}
       </Rail>
-    </Section>
-  )
-}
-
-function ScheduleBanner() {
-  const { data } = useSchedule(0)
-  const total = data?.schedule.reduce((n, d) => n + d.episodes.length, 0) ?? 0
-  const names = data?.schedule.flatMap((d) => d.episodes.map((e) => titleOf(e.anime.title))).filter((t) => t.length < 34).slice(0, 12) ?? []
-  return (
-    <Section>
-      <div className="relative overflow-hidden rounded-3xl border border-white/[0.08] bg-gradient-to-br from-[#170a10] via-background to-[#0a0d22] px-6 py-14 sm:px-12">
-        <RetroGrid className="opacity-60" angle={70} cellSize={50} lightLineColor="#ff1f2d" darkLineColor="#ff1f2d" />
-        <div className="absolute -top-24 -right-24 size-80 rounded-full bg-brand-blue/25 blur-[100px]" />
-        <div className="absolute -bottom-24 -left-24 size-80 rounded-full bg-brand-red/25 blur-[100px]" />
-        <div className="relative flex flex-col items-start gap-8 md:flex-row md:items-center md:justify-between">
-          <div>
-            <p className="font-mono text-[11px] tracking-[0.25em] text-primary uppercase">This week</p>
-            <h2 className="mt-3 text-3xl font-black tracking-tight sm:text-5xl">
-              <NumberTicker value={total || 0} className="text-white" /> new episodes
-            </h2>
-            <div className="mt-3 flex items-center gap-2 text-lg text-white/60">
-              <span>including</span>
-              {names.length > 0 && <WordRotate words={names} className="font-semibold text-white" duration={2200} />}
-            </div>
-          </div>
-          <Link
-            to="/schedule"
-            className="flex h-12 items-center gap-2 rounded-2xl bg-white px-6 text-[15px] font-semibold text-black transition hover:bg-white/90 hover:shadow-[0_0_40px_-5px_rgba(255,255,255,0.6)]"
-          >
-            <CalendarDays className="size-4" />
-            View schedule
-          </Link>
-        </div>
-      </div>
     </Section>
   )
 }

@@ -25,6 +25,8 @@ export async function onRequest(context) {
     url.hostname = CANONICAL_HOST;
     return Response.redirect(url.toString(), 301);
   }
+  // Nothing lives under /.well-known/ yet; answer 404 rather than letting the SPA fallback serve HTML.
+  if (url.pathname.startsWith('/.well-known/')) return new Response('Not found', { status: 404 });
   const res = await handleSeo(request, env, context, () => env.ASSETS.fetch(new URL('/', request.url)));
   return res ?? context.next();
 }

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { lazy, Suspense, useEffect, useState } from "react"
 import { animeHref } from "@/lib/seo"
 import { WatchLink } from "@/components/WatchLink"
 import { Link } from "react-router-dom"
@@ -7,12 +7,30 @@ import { Calendar, ChevronLeft, ChevronRight, Clapperboard, Info, Play, Star } f
 import { useQueryClient } from "@tanstack/react-query"
 import { ShimmerButton } from "@/components/ui/shimmer-button"
 import { AnimatedShinyText } from "@/components/ui/animated-shiny-text"
-import { Particles } from "@/components/ui/particles"
 import { api, useAnime, type AnimeCard, type AnimeDetail } from "@/lib/api"
 import { availableEpisodes, formatLabel, score, statusLabel, stripHtml, titleOf } from "@/lib/format"
+import { LITE } from "@/lib/lite"
 import { cn } from "@/lib/utils"
 
 const INTERVAL = 9000
+
+// Decorative canvas: desktop only, and started once the page is idle so it stays out of first render.
+const Particles = lazy(() => import("@/components/ui/particles").then((m) => ({ default: m.Particles })))
+
+function useIdleDesktop() {
+  const [ready, setReady] = useState(false)
+  useEffect(() => {
+    if (LITE) return
+    const go = () => setReady(true)
+    if ("requestIdleCallback" in window) {
+      const id = requestIdleCallback(go, { timeout: 4000 })
+      return () => cancelIdleCallback(id)
+    }
+    const t = setTimeout(go, 2000)
+    return () => clearTimeout(t)
+  }, [])
+  return ready
+}
 
 const art = (d: AnimeDetail | undefined, type: string) => d?.artwork?.find((a) => a.coverType === type)?.url
 
@@ -23,6 +41,7 @@ export function HeroSpotlight({ items }: { items: AnimeCard[] }) {
   const qc = useQueryClient()
   const cur = slides[i]
   const { data: detail } = useAnime(cur?.id)
+  const fx = useIdleDesktop()
 
   useEffect(() => {
     if (paused || slides.length < 2) return
@@ -68,7 +87,11 @@ export function HeroSpotlight({ items }: { items: AnimeCard[] }) {
       <div className="absolute inset-0 bg-gradient-to-t from-background via-background/10 to-background/50" />
       <div className="absolute -bottom-40 -left-40 size-[36rem] rounded-full bg-brand-red/20 blur-[140px]" />
       <div className="absolute -right-32 -bottom-52 size-[30rem] rounded-full bg-brand-blue/20 blur-[140px]" />
-      <Particles className="absolute inset-0 hidden md:block" quantity={30} ease={70} size={0.5} color="#ffffff" refresh={false} />
+      {fx && (
+        <Suspense fallback={null}>
+          <Particles className="absolute inset-0 hidden md:block" quantity={30} ease={70} size={0.5} color="#ffffff" refresh={false} />
+        </Suspense>
+      )}
 
       <div className="relative mx-auto flex h-full max-w-[1600px] flex-col justify-end px-4 pb-28 sm:px-6 lg:px-10 lg:pb-32">
         <AnimatePresence mode="wait" initial={false}>
@@ -86,7 +109,7 @@ export function HeroSpotlight({ items }: { items: AnimeCard[] }) {
             </div>
 
             {logo ? (
-              <img src={logo} alt={titleOf(cur.title)} className="mb-5 max-h-36 max-w-[min(85vw,480px)] object-contain object-left drop-shadow-[0_8px_30px_rgba(0,0,0,0.6)]" />
+              <img src={logo} alt={titleOf(cur.title)} width={800} height={310} className="mb-5 max-h-36 max-w-[min(85vw,480px)] object-contain object-left drop-shadow-[0_8px_30px_rgba(0,0,0,0.6)]" />
             ) : (
               <h1 className="mb-5 line-clamp-2 text-4xl leading-[1.05] font-black tracking-tight text-white sm:text-5xl lg:text-6xl">{titleOf(cur.title)}</h1>
             )}
@@ -141,7 +164,7 @@ export function HeroSpotlight({ items }: { items: AnimeCard[] }) {
                 n === i ? "ring-2 ring-primary" : "opacity-50 ring-white/10 hover:opacity-90",
               )}
             >
-              <img src={s.cover_image.large} alt="" className="size-full object-cover" />
+              <img src={s.cover_image.medium || s.cover_image.large} alt="" className="size-full object-cover" />
               {n === i && (
                 <motion.span
                   key={`p${i}${paused}`}

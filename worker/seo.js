@@ -88,6 +88,7 @@ async function home(env, ctx) {
     description: DEFAULT_DESC,
     canonical: '/',
     preload: d.trending.find((a) => a.banner_image)?.banner_image,
+    data: { id: 'ag-home', value: d },
     jsonld: [
       { '@context': 'https://schema.org', '@type': 'WebSite', name: NAME, url: SITE + '/', potentialAction: { '@type': 'SearchAction', target: `${SITE}/search?q={search_term_string}`, 'query-input': 'required name=search_term_string' } },
       { '@context': 'https://schema.org', '@type': 'Organization', name: NAME, url: SITE + '/', logo: DEFAULT_IMAGE },
@@ -278,7 +279,13 @@ function inject(res, page) {
     .on('title', { element: (el) => el.setInnerContent(page.title) })
     .on('meta[name="description"]', { element: (el) => el.remove() })
     .on('head', { element: (el) => el.append(headTags(page), { html: true }) })
-    .on('div#root', { element: (el) => el.setInnerContent(`<div id="prerender">${nav()}${page.body}</div>`, { html: true }) })
+    .on('div#root', {
+      element: (el) => {
+        el.setInnerContent(`<div id="prerender">${nav()}${page.body}</div>`, { html: true });
+        // The API data this page was built from, so the app renders on first paint instead of refetching it (src/lib/api.ts).
+        if (page.data) el.after(`<script type="application/json" id="${page.data.id}">${JSON.stringify(page.data.value).replace(/</g, '\\u003c')}</script>`, { html: true });
+      },
+    })
     .transform(res);
 }
 

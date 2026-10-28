@@ -87,9 +87,9 @@ export function EpisodeCard({ item }: { item: AiredItem }) {
           style={{ backgroundColor: a.cover_image.color ?? undefined }}
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
-        <img src={a.cover_image.large} alt="" loading="lazy" className="absolute bottom-3 left-3 h-[58%] rounded-md shadow-xl ring-1 ring-white/10" />
+        <img src={a.cover_image.medium || a.cover_image.large} alt="" loading="lazy" className="absolute bottom-3 left-3 h-[58%] rounded-md shadow-xl ring-1 ring-white/10" />
         <div className="absolute right-3 bottom-3 left-[calc(3rem+14%)] pl-3">
-          <span className="inline-flex items-center gap-1 rounded-md bg-primary px-1.5 py-0.5 text-[10.5px] font-bold text-white">EP {item.episode}</span>
+          <span className="inline-flex items-center gap-1 rounded-md bg-red-700 px-1.5 py-0.5 text-[10.5px] font-bold text-white">EP {item.episode}</span>
           <h3 className="mt-1.5 line-clamp-2 text-sm leading-snug font-semibold text-white">{titleOf(a.title)}</h3>
           <p className="mt-0.5 text-[11px] text-white/55">{timeAgo(item.aired_at)}</p>
         </div>

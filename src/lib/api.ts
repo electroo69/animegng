@@ -175,7 +175,22 @@ const qs = (o: Record<string, string | number | undefined | null>) => {
 
 const MIN = 60_000
 
-export const useHome = () => useQuery({ queryKey: ["home"], queryFn: () => api<HomeData>("/home"), staleTime: 5 * MIN })
+// The edge embeds /home in the page it serves for "/" (worker/seo.js), so the hero renders without waiting on the API.
+function embedded<T>(id: string): T | undefined {
+  const el = document.getElementById(id)
+  if (!el) return undefined
+  el.remove()
+  try {
+    return JSON.parse(el.textContent ?? "") as T
+  } catch {
+    return undefined
+  }
+}
+const homeSeed = embedded<HomeData>("ag-home")
+const homeSeedAt = Date.now()
+
+export const useHome = () =>
+  useQuery({ queryKey: ["home"], queryFn: () => api<HomeData>("/home"), staleTime: 5 * MIN, initialData: homeSeed, initialDataUpdatedAt: homeSeedAt })
 
 export const useAnime = (id: number | undefined) =>
   useQuery({ queryKey: ["anime", id], queryFn: () => api<AnimeDetail>(`/anime/${id}`), enabled: !!id, staleTime: 30 * MIN })

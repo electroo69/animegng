@@ -96,7 +96,7 @@ export default function Schedule() {
                       to={aired ? `/watch/${e.anime.id}/${e.episode}` : animeHref(e.anime)}
                       className="group flex min-w-0 flex-1 items-center gap-4 rounded-2xl border border-white/[0.06] bg-white/[0.02] p-2.5 pr-4 transition hover:border-white/15 hover:bg-white/[0.04]"
                     >
-                      <img src={e.anime.cover_image.large} alt="" loading="lazy" className="h-16 w-12 shrink-0 rounded-lg object-cover" />
+                      <img src={e.anime.cover_image.medium || e.anime.cover_image.large} alt="" loading="lazy" className="h-16 w-12 shrink-0 rounded-lg object-cover" />
                       <div className="min-w-0 flex-1">
                         <p className="line-clamp-1 font-semibold group-hover:text-white">{titleOf(e.anime.title)}</p>
                         <p className="mt-0.5 text-xs text-white/45">

@@ -23,17 +23,6 @@ export function SearchCommand({ open, onOpenChange }: { open: boolean; onOpenCha
   const trending = useList("trending", 1, 6, open)
   const items = dq.length > 1 ? data?.results ?? [] : trending.data?.results ?? []
 
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if ((e.key === "k" && (e.metaKey || e.ctrlKey)) || (e.key === "/" && !/input|textarea/i.test((e.target as HTMLElement).tagName))) {
-        e.preventDefault()
-        onOpenChange(!open)
-      }
-    }
-    window.addEventListener("keydown", onKey)
-    return () => window.removeEventListener("keydown", onKey)
-  }, [open, onOpenChange])
-
   const go = (path: string) => {
     onOpenChange(false)
     setQ("")

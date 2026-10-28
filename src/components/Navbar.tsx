@@ -1,10 +1,12 @@
-import { useEffect, useState } from "react"
+import { lazy, Suspense, useEffect, useState } from "react"
 import { UserMenu } from "@/components/social/UserMenu"
 import { Link, NavLink } from "react-router-dom"
 import { CalendarDays, Compass, Flame, Home, Menu, Search, Sparkles, Trophy } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { SearchCommand } from "@/components/SearchCommand"
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
+
+// The search dialog (cmdk + dialog) loads on first open, not with the page.
+const SearchCommand = lazy(() => import("@/components/SearchCommand").then((m) => ({ default: m.SearchCommand })))
 
 export const NAV = [
   { to: "/", label: "Home", icon: Home },
@@ -18,7 +20,7 @@ export const NAV = [
 export function Logo({ className }: { className?: string }) {
   return (
     <Link to="/" aria-label="AnimeGang home" className={cn("block shrink-0", className)}>
-      <img src="/logo.png" alt="AnimeGang" className="h-full w-auto select-none" draggable={false} />
+      <img src="/logo.png" alt="AnimeGang" width={1000} height={213} className="h-full w-auto select-none" draggable={false} />
     </Link>
   )
 }
@@ -26,7 +28,21 @@ export function Logo({ className }: { className?: string }) {
 export function Navbar() {
   const [scrolled, setScrolled] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
+  const [searchUsed, setSearchUsed] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
+
+  if (searchOpen && !searchUsed) setSearchUsed(true)
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.key === "k" && (e.metaKey || e.ctrlKey)) || (e.key === "/" && !/input|textarea/i.test((e.target as HTMLElement).tagName))) {
+        e.preventDefault()
+        setSearchOpen((o) => !o)
+      }
+    }
+    window.addEventListener("keydown", onKey)
+    return () => window.removeEventListener("keydown", onKey)
+  }, [])
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 24)
@@ -94,6 +110,7 @@ export function Navbar() {
 
           <button
             onClick={() => setSearchOpen(true)}
+            aria-label="Search anime"
             className="group ml-auto flex h-10 items-center gap-2.5 rounded-full border border-white/10 bg-white/[0.04] pr-2 pl-3.5 text-sm text-white/50 transition hover:border-white/20 hover:bg-white/[0.07] hover:text-white/80 sm:w-72"
           >
             <Search className="size-4" />
@@ -105,7 +122,11 @@ export function Navbar() {
           <UserMenu />
         </div>
       </header>
-      <SearchCommand open={searchOpen} onOpenChange={setSearchOpen} />
+      {searchUsed && (
+        <Suspense fallback={null}>
+          <SearchCommand open={searchOpen} onOpenChange={setSearchOpen} />
+        </Suspense>
+      )}
     </>
   )
 }
