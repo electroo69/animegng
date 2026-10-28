@@ -39,17 +39,31 @@ const aired = (a) => (a.next_airing_episode ? a.next_airing_episode.episode - 1 
 const date = (iso) => (iso ? new Date(iso).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' }) : '');
 const currentSeason = () => { const d = new Date(); return { season: SEASONS[Math.floor(d.getUTCMonth() / 3)], year: d.getUTCFullYear() }; };
 
-async function api(path, env, ctx) {
+// Fresh copy for `ttl` seconds; a week-long stale copy is served if the API fails (e.g. AniList
+// rate limits), so sitemaps and pages don't error when a crawler arrives at a bad moment.
+async function api(path, env, ctx, ttl = 3600) {
   const url = new URL(`/api${path}`, env.API_ORIGIN || 'https://animegng-api.vercel.app');
   const cache = globalThis.caches?.default;
   const key = new Request(`https://seo-cache.internal${path}`);
+  const staleKey = new Request(`https://seo-cache.internal/stale${path}`);
   const hit = await cache?.match(key);
   if (hit) return hit.json();
-  const res = await fetch(url, { headers: { Accept: 'application/json' }, signal: AbortSignal.timeout(20000) });
-  if (!res.ok) throw Object.assign(new Error(`API ${res.status}`), { status: res.status });
-  const data = await res.json();
-  ctx?.waitUntil?.(cache?.put(key, new Response(JSON.stringify(data), { headers: { 'Cache-Control': 'public, max-age=3600' } })));
-  return data;
+  try {
+    const res = await fetch(url, { headers: { Accept: 'application/json' }, signal: AbortSignal.timeout(20000) });
+    if (!res.ok) throw Object.assign(new Error(`API ${res.status}`), { status: res.status });
+    const data = await res.json();
+    const body = JSON.stringify(data);
+    ctx?.waitUntil?.(Promise.all([
+      cache?.put(key, new Response(body, { headers: { 'Cache-Control': `public, max-age=${ttl}` } })),
+      cache?.put(staleKey, new Response(body, { headers: { 'Cache-Control': 'public, max-age=604800' } })),
+    ]));
+    return data;
+  } catch (err) {
+    if (err.status === 404) throw err;
+    const stale = await cache?.match(staleKey);
+    if (stale) return stale.json();
+    throw err;
+  }
 }
 
 // ------------------------------------------------------------------ page models
@@ -286,17 +300,17 @@ async function sitemap(p, env, ctx) {
     ]);
   }
   if (p === '/sitemap-episodes.xml') {
-    const d = await api('/latest-aired?page=1&limit=100', env, ctx);
+    const d = await api('/latest-aired?page=1&limit=100', env, ctx, 3600);
     return urlset(d.results.map((e) => ({ loc: `/watch/${e.anime.id}/${e.episode}`, lastmod: e.aired_at.slice(0, 10) })));
   }
   if (p === '/sitemap-seasonal.xml') {
-    const [a, b] = await Promise.all([api('/list/seasonal?page=1&limit=50', env, ctx), api('/list/airing?page=1&limit=50', env, ctx)]);
+    const [a, b] = await Promise.all([api('/list/seasonal?page=1&limit=50', env, ctx, 86400), api('/list/airing?page=1&limit=50', env, ctx, 86400)]);
     const seen = new Set();
     return urlset([...a.results, ...b.results].filter((x) => !seen.has(x.id) && seen.add(x.id)).map((x) => ({ loc: animePath(x), lastmod: today })));
   }
   const m = p.match(/^\/sitemap-anime-(\d+)\.xml$/);
   if (m && Number(m[1]) >= 1 && Number(m[1]) <= ANIME_SITEMAPS) {
-    const d = await api(`/list/popular?page=${m[1]}&limit=50`, env, ctx);
+    const d = await api(`/list/popular?page=${m[1]}&limit=50`, env, ctx, 86400);
     return urlset(d.results.map((x) => ({ loc: animePath(x) })));
   }
   return null;
