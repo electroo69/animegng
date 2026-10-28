@@ -267,7 +267,7 @@ function PartyRoom({ id, guestName }: { id: string; guestName?: string }) {
               <AmbientGlow video={stream.data ? video : null} on />
               <div className="relative aspect-video overflow-hidden rounded-2xl bg-black ring-1 ring-white/10">
                 {stream.data ? (
-                  <VideoPlayer key={`${room.episode}-${room.lang}`} stream={stream.data} autoplay={false} autoSkipIntro={false} autoSkipOutro={false} onVideo={setVideo}>
+                  <VideoPlayer key={`${room.episode}-${room.lang}`} stream={stream.data} autoplay={false} autoSkipIntro={false} autoSkipOutro={false} onVideo={setVideo} locked={!isHost}>
                     <div className="pointer-events-none absolute inset-x-0 top-3 z-10 h-[45%] overflow-hidden" aria-hidden>
                       {flying.map((f) => (
                         <span

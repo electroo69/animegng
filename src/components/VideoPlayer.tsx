@@ -62,11 +62,13 @@ interface Props {
   onFatalError?: () => void
   /** Receives the underlying <video> element (e.g. for the ambient glow). */
   onVideo?: (video: HTMLVideoElement | null) => void
+  /** Watch-party guests: play/pause/seek/skip are disabled (the host controls playback). */
+  locked?: boolean
   /** Overlay rendered inside the player (so it also shows in fullscreen), e.g. live comments. */
   children?: React.ReactNode
 }
 
-export function VideoPlayer({ stream, poster, startAt = 0, autoplay, autoSkipIntro, autoSkipOutro, onProgress, onEnded, onFatalError, onVideo, children }: Props) {
+export function VideoPlayer({ stream, poster, startAt = 0, autoplay, autoSkipIntro, autoSkipOutro, onProgress, onEnded, onFatalError, onVideo, children, locked = false }: Props) {
   const wrap = useRef<HTMLDivElement>(null)
   const video = useRef<HTMLVideoElement>(null)
   const hls = useRef<Hls | null>(null)
@@ -208,14 +210,14 @@ export function VideoPlayer({ stream, poster, startAt = 0, autoplay, autoSkipInt
 
   const toggle = useCallback(() => {
     const v = video.current
-    if (!v) return
+    if (!v || locked) return
     if (v.paused) v.play().catch(() => {})
     else v.pause()
-  }, [])
+  }, [locked])
   const seekBy = useCallback((d: number) => {
     const v = video.current
-    if (v) v.currentTime = Math.max(0, Math.min(v.duration || 0, v.currentTime + d))
-  }, [])
+    if (v && !locked) v.currentTime = Math.max(0, Math.min(v.duration || 0, v.currentTime + d))
+  }, [locked])
   const toggleFs = useCallback(() => {
     if (document.fullscreenElement) document.exitFullscreen()
     else wrap.current?.requestFullscreen?.()
@@ -255,7 +257,7 @@ export function VideoPlayer({ stream, poster, startAt = 0, autoplay, autoSkipInt
       else if (k === "m") updatePrefs({ muted: !prefs.muted })
       else if (k === "f") toggleFs()
       else if (k === "c") updatePrefs({ subtitle: prefs.subtitle === "Off" ? "English" : "Off" })
-      else if (k === "s") {
+      else if (k === "s" && !locked) {
         const seg = activeSegment()
         if (seg) v.currentTime = seg.end
         else return
@@ -325,7 +327,7 @@ export function VideoPlayer({ stream, poster, startAt = 0, autoplay, autoSkipInt
           <Loader2 className="size-10 animate-spin text-white/80" />
         </div>
       )}
-      {!playing && !waiting && !error && (
+      {!playing && !waiting && !error && !locked && (
         <button onClick={toggle} aria-label="Play" className="absolute inset-0 m-auto grid size-16 place-items-center rounded-full bg-primary/90 text-white transition hover:scale-105">
           <Play className="ml-1 size-7 fill-white" />
         </button>
@@ -334,7 +336,7 @@ export function VideoPlayer({ stream, poster, startAt = 0, autoplay, autoSkipInt
         <div className="absolute inset-0 grid place-items-center bg-black/70 px-6 text-center text-sm text-white/80">{error}</div>
       )}
 
-      {seg && (
+      {seg && !locked && (
         <button
           onClick={() => {
             if (video.current) video.current.currentTime = seg.end
@@ -350,7 +352,7 @@ export function VideoPlayer({ stream, poster, startAt = 0, autoplay, autoSkipInt
       <div className={cn("absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent px-4 pt-14 pb-3 transition-opacity duration-300", showUi ? "opacity-100" : "pointer-events-none opacity-0")}>
         {/* Seek bar */}
         <div
-          className="group/seek relative mb-2 h-4 cursor-pointer"
+          className={cn("group/seek relative mb-2 h-4", locked ? "cursor-not-allowed" : "cursor-pointer")}
           onMouseMove={(e) => {
             const r = e.currentTarget.getBoundingClientRect()
             const x = Math.max(0, Math.min(r.width, e.clientX - r.left))
@@ -359,7 +361,7 @@ export function VideoPlayer({ stream, poster, startAt = 0, autoplay, autoSkipInt
           onMouseLeave={() => setHover(null)}
           onClick={(e) => {
             const r = e.currentTarget.getBoundingClientRect()
-            if (video.current && duration) video.current.currentTime = ((e.clientX - r.left) / r.width) * duration
+            if (video.current && duration && !locked) video.current.currentTime = ((e.clientX - r.left) / r.width) * duration
           }}
         >
           <div className="absolute inset-x-0 top-1/2 h-1 -translate-y-1/2 rounded-full bg-white/20 transition-all group-hover/seek:h-1.5">
