@@ -6,11 +6,11 @@
 import { useEffect, useRef, useState } from "react"
 import { cn } from "@/lib/utils"
 
-// Tuned in the ambient demo: brightness 100%, blur 61px, saturation 200%, spread 1.24, dim 55%.
+// Tuned in the ambient demo: brightness 100%, blur 61px, saturation 200%, spread 1.24, dim 55%. Spread later reduced to 1.12 (tighter glow).
 const BLUR = 61
 const SATURATE = 200
 const BRIGHTNESS = 100
-const SPREAD = 1.24
+const SPREAD = 1.12
 const DIM = 0.55
 const W = 300
 const H = 150
