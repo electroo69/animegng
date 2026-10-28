@@ -42,11 +42,31 @@ export async function sendEmail(env, to, subject, text, html) {
   }
 }
 
-const shell = (title, body, link, cta) => `<!doctype html><html><body style="margin:0;background:#0b0b10;font-family:system-ui,sans-serif;color:#e8e8ee">
-<div style="max-width:480px;margin:0 auto;padding:32px 24px"><p style="font-size:20px;font-weight:800;margin:0 0 16px;color:#ff1f2d">AnimeGang</p>
-<h1 style="font-size:18px;margin:0 0 12px;color:#fff">${title}</h1><p style="line-height:1.6;color:#b8b8c4">${body}</p>
-${link ? `<p style="margin:24px 0"><a href="${link}" style="background:#ff1f2d;color:#fff;text-decoration:none;padding:12px 20px;border-radius:10px;font-weight:600">${cta}</a></p>` : ''}
-<p style="font-size:12px;color:#6b6b78;margin-top:32px">If you didn't request this, you can ignore this email.</p></div></body></html>`;
+// Email layout in the site's style (dark card, logo, red→blue accent, red gradient button).
+// Tables + inline styles because email clients ignore most modern CSS.
+const shell = (title, body, link, cta) => `<!doctype html><html><head><meta name="color-scheme" content="dark"><meta name="supported-color-schemes" content="dark"></head>
+<body style="margin:0;padding:0;background:#07070a">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#07070a;padding:32px 12px;font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif">
+<tr><td align="center">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px">
+    <tr><td align="center" style="padding:0 0 24px"><a href="https://animegng.com"><img src="https://animegng.com/logo.png" width="200" alt="AnimeGang" style="display:block;width:200px;height:auto;border:0"></a></td></tr>
+    <tr><td style="background:#121219;border:1px solid #23232e;border-radius:18px;overflow:hidden">
+      <div style="height:4px;background:#ff1f2d;background-image:linear-gradient(90deg,#ff1f2d,#2b4bff)"></div>
+      <div style="padding:32px 32px 28px">
+        <p style="margin:0 0 6px;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:#ff1f2d;font-weight:600">AnimeGang</p>
+        <h1 style="margin:0 0 14px;font-size:22px;line-height:1.3;color:#ffffff;font-weight:800">${title}</h1>
+        <p style="margin:0;font-size:15px;line-height:1.65;color:#b4b4c2">${body}</p>
+        ${link ? `<table role="presentation" cellpadding="0" cellspacing="0" style="margin:28px 0 8px"><tr><td style="border-radius:12px;background:#ff1f2d;background-image:linear-gradient(135deg,#ff1f2d,#c4000c)">
+          <a href="${link}" style="display:inline-block;padding:13px 26px;font-size:15px;font-weight:700;color:#ffffff;text-decoration:none;border-radius:12px">${cta}</a></td></tr></table>
+        <p style="margin:16px 0 0;font-size:12px;line-height:1.6;color:#6e6e7c">Button not working? Paste this link into your browser:<br><a href="${link}" style="color:#8ea2ff;word-break:break-all">${link}</a></p>` : ''}
+      </div>
+    </td></tr>
+    <tr><td align="center" style="padding:22px 12px 0;font-size:12px;line-height:1.7;color:#5c5c6a">
+      If you didn't request this, you can ignore this email.<br>
+      <a href="https://animegng.com" style="color:#8a8a98;text-decoration:none">animegng.com</a> &nbsp;·&nbsp; <a href="https://animegng.com/settings" style="color:#8a8a98;text-decoration:none">Email settings</a> &nbsp;·&nbsp; <a href="mailto:support@animegng.com" style="color:#8a8a98;text-decoration:none">Support</a>
+    </td></tr>
+  </table>
+</td></tr></table></body></html>`;
 
 export const emails = {
   reset: (link) => ['Reset your AnimeGang password', `Reset your password: ${link}\nThe link expires in 1 hour.`, shell('Reset your password', 'Click below to choose a new password. The link expires in 1 hour.', link, 'Reset password')],
