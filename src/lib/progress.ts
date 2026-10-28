@@ -62,10 +62,11 @@ export interface PlayerPrefs {
   autoNext: boolean
   skipIntro: boolean
   skipOutro: boolean
+  ambient: boolean
 }
 // v2: the default server became "Direct" (our own HLS player); older saved prefs defaulted to an embed.
 const PREF_KEY = "ag:player:v2"
-const defaults: PlayerPrefs = { lang: "sub", server: "Direct", autoplay: true, autoNext: true, skipIntro: false, skipOutro: false }
+const defaults: PlayerPrefs = { lang: "sub", server: "Direct", autoplay: true, autoNext: true, skipIntro: false, skipOutro: false, ambient: true }
 
 export function loadPrefs(): PlayerPrefs {
   try {

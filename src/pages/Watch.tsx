@@ -7,6 +7,7 @@ import { AnimeCard } from "@/components/AnimeCard"
 import { Container, Rail, Section, SectionHeader } from "@/components/Section"
 import { BorderBeam } from "@/components/ui/border-beam"
 import { VideoPlayer } from "@/components/VideoPlayer"
+import { AmbientGlow } from "@/components/AmbientGlow"
 import { embedSrc, useAnime, useEpisodes, useWatch, type Episode, type Server } from "@/lib/api"
 import { useDirectStream, usePrefetchDirect } from "@/lib/direct"
 import { cap, countdown, formatLabel, score, statusLabel, stripHtml, titleOf } from "@/lib/format"
@@ -23,6 +24,7 @@ export default function Watch() {
   const episodes = useEpisodes(id)
   const [prefs, setPrefs] = useState<PlayerPrefs>(loadPrefs)
   const [dim, setDim] = useState(false)
+  const [videoEl, setVideoEl] = useState<HTMLVideoElement | null>(null)
   const frameRef = useRef<HTMLIFrameElement>(null)
   const lastSave = useRef(0)
   const prefetch = usePrefetchDirect()
@@ -152,6 +154,7 @@ export default function Watch() {
           <div className="min-w-0">
             {/* Player */}
             <div className={cn("relative isolate", dim && "z-50")}>
+            <AmbientGlow video={directStream && !deciding ? videoEl : null} on={prefs.ambient} />
             <div className="relative aspect-video overflow-hidden rounded-2xl bg-black ring-1 ring-white/10">
               {directStream && !deciding ? (
                 <VideoPlayer
@@ -178,6 +181,7 @@ export default function Watch() {
                     if (prefs.autoNext && next) navigate(`/watch/${id}/${next}`)
                   }}
                   onFatalError={() => setDirectFailed(lang)}
+                  onVideo={setVideoEl}
                 />
               ) : src ? (
                 <iframe
@@ -221,6 +225,7 @@ export default function Watch() {
               <Toggle on={prefs.autoNext} onClick={() => update({ autoNext: !prefs.autoNext })}>Auto next</Toggle>
               <Toggle on={prefs.skipIntro} onClick={() => update({ skipIntro: !prefs.skipIntro })}>Skip intro</Toggle>
               <Toggle on={prefs.skipOutro} onClick={() => update({ skipOutro: !prefs.skipOutro })}>Skip outro</Toggle>
+              <Toggle on={prefs.ambient} onClick={() => update({ ambient: !prefs.ambient })}>Ambient</Toggle>
               <button onClick={() => setDim(!dim)} className={cn("flex h-8 items-center gap-1.5 rounded-lg px-3 text-xs font-medium text-white/60 transition hover:bg-white/5 hover:text-white", dim && "text-amber-300")}>
                 <Lightbulb className="size-3.5" />
                 Lights

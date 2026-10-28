@@ -60,9 +60,11 @@ interface Props {
   onProgress?: (current: number, duration: number) => void
   onEnded?: () => void
   onFatalError?: () => void
+  /** Receives the underlying <video> element (e.g. for the ambient glow). */
+  onVideo?: (video: HTMLVideoElement | null) => void
 }
 
-export function VideoPlayer({ stream, poster, startAt = 0, autoplay, autoSkipIntro, autoSkipOutro, onProgress, onEnded, onFatalError }: Props) {
+export function VideoPlayer({ stream, poster, startAt = 0, autoplay, autoSkipIntro, autoSkipOutro, onProgress, onEnded, onFatalError, onVideo }: Props) {
   const wrap = useRef<HTMLDivElement>(null)
   const video = useRef<HTMLVideoElement>(null)
   const hls = useRef<Hls | null>(null)
@@ -89,6 +91,12 @@ export function VideoPlayer({ stream, poster, startAt = 0, autoplay, autoSkipInt
       saveVideoPrefs(next)
       return next
     })
+
+  useEffect(() => {
+    onVideo?.(video.current)
+    return () => onVideo?.(null)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   // Load the stream.
   useEffect(() => {
