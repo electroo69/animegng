@@ -1,12 +1,14 @@
-import { useState } from "react"
+import { lazy, Suspense, useState } from "react"
 import { animeHref } from "@/lib/seo"
 import { WatchLink } from "@/components/WatchLink"
 import { Link } from "react-router-dom"
 import { Captions, Clock, Play, Star } from "lucide-react"
-import { BorderBeam } from "@/components/ui/border-beam"
 import type { AiredItem, AnimeCard as Card } from "@/lib/api"
 import { availableEpisodes, countdown, formatLabel, score, timeAgo, titleOf } from "@/lib/format"
 import { cn } from "@/lib/utils"
+
+// Hover-only effect; loaded on first hover so its animation library stays out of the page bundle.
+const BorderBeam = lazy(() => import("@/components/ui/border-beam").then((m) => ({ default: m.BorderBeam })))
 
 const BEAM = { colorFrom: "#ff1f2d", colorTo: "#2b4bff" }
 
@@ -63,7 +65,11 @@ export function AnimeCard({ anime, rank, className }: { anime: Card; rank?: numb
             </span>
           )}
         </div>
-        {hover && <BorderBeam size={90} duration={5} {...BEAM} borderWidth={1.5} />}
+        {hover && (
+          <Suspense fallback={null}>
+            <BorderBeam size={90} duration={5} {...BEAM} borderWidth={1.5} />
+          </Suspense>
+        )}
       </div>
       <h3 className="mt-2.5 line-clamp-2 text-[13.5px] leading-snug font-medium text-white/90 transition group-hover/card:text-white">{titleOf(anime.title)}</h3>
       <p className="mt-0.5 truncate text-xs text-white/45">

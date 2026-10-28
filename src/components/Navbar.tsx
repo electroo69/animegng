@@ -20,7 +20,7 @@ export const NAV = [
 export function Logo({ className }: { className?: string }) {
   return (
     <Link to="/" aria-label="AnimeGang home" className={cn("block shrink-0", className)}>
-      <img src="/logo.png" alt="AnimeGang" width={1000} height={213} className="h-full w-auto select-none" draggable={false} />
+      <img src="/logo-nav.webp" alt="AnimeGang" width={451} height={96} className="h-full w-auto select-none" draggable={false} />
     </Link>
   )
 }

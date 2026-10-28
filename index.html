@@ -9,7 +9,7 @@
       gtag('js', new Date());
 
       gtag('config', 'G-WC93Q2VW8R');
-      // Load gtag.js once the page is idle or the visitor interacts, so it doesn't compete with first paint.
+      // Load gtag.js on the visitor's first interaction (or 15s after load), so it doesn't compete with page load.
       (function () {
         var done = false
         function load() {
@@ -21,7 +21,7 @@
           document.head.appendChild(s)
         }
         ['pointerdown', 'keydown', 'scroll'].forEach(function (e) { addEventListener(e, load, { once: true, passive: true }) })
-        addEventListener('load', function () { setTimeout(load, 3500) })
+        addEventListener('load', function () { setTimeout(load, 15000) })
       })()
     </script>
     <meta charset="UTF-8" />

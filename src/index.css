@@ -276,3 +276,56 @@ video::-webkit-media-text-track-container {
   from { left: 100%; transform: translateX(0); }
   to { left: 0; transform: translateX(-100%); }
 }
+
+/* Scroll indicator (ui/scroll-progress.tsx) and section fade-in (Section.tsx), both run by the browser on
+   scroll/view timelines instead of JS. Unsupported browsers show the sections plainly and no indicator. */
+.scroll-progress { display: none; }
+@supports (animation-timeline: scroll()) {
+  .scroll-progress {
+    display: block;
+    transform: scaleX(0);
+    animation: grow-x linear both;
+    animation-timeline: scroll(root block);
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .reveal {
+      animation: reveal linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 35%;
+    }
+  }
+}
+@keyframes grow-x {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+@keyframes reveal {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: none; }
+}
+
+/* Home hero slide transitions (HeroSpotlight.tsx). */
+@media (prefers-reduced-motion: no-preference) {
+  .hero-bg-in { animation: fade-in 1s ease both, hero-zoom 10s linear both; }
+  .hero-text-in { animation: hero-text-in 0.6s cubic-bezier(0.22, 1, 0.36, 1) both; }
+}
+.hero-progress { animation: grow-x linear both; }
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes hero-zoom {
+  from { transform: scale(1.08); }
+  to { transform: scale(1); }
+}
+@keyframes hero-text-in {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: none; }
+}
+
+/* Lite mode (src/lib/lite.ts: phones and reduced motion): drop the always-running decorative effects that
+   repaint every frame (shiny text sweep, shimmer-button spark). */
+@media (max-width: 767px), (prefers-reduced-motion: reduce) {
+  .animate-shiny-text { animation: none; background-image: none; }
+  .animate-shimmer-slide { display: none; }
+}

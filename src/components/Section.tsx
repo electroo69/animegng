@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from "react"
 import { Link } from "react-router-dom"
 import { ChevronLeft, ChevronRight } from "lucide-react"
-import { BlurFade } from "@/components/ui/blur-fade"
 import { cn } from "@/lib/utils"
 
 export function SectionHeader({ title, eyebrow, href, action, className }: { title: ReactNode; eyebrow?: string; href?: string; action?: ReactNode; className?: string }) {
@@ -25,12 +24,9 @@ export function SectionHeader({ title, eyebrow, href, action, className }: { tit
   )
 }
 
-export function Section({ children, className, delay = 0 }: { children: ReactNode; className?: string; delay?: number }) {
-  return (
-    <BlurFade inView delay={delay} className={className}>
-      <section>{children}</section>
-    </BlurFade>
-  )
+// Fades in as it scrolls into view via a CSS view timeline (index.css .reveal), so there's no JS observer per section.
+export function Section({ children, className }: { children: ReactNode; className?: string; delay?: number }) {
+  return <section className={cn("reveal", className)}>{children}</section>
 }
 
 // Horizontally scrolling rail with arrow buttons; children should be fixed-width items.

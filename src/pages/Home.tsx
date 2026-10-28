@@ -1,4 +1,4 @@
-import { lazy, Suspense } from "react"
+import { lazy, startTransition, Suspense, useEffect, useState } from "react"
 import { Link } from "react-router-dom"
 import { genreHref, SITE_NAME, useHead } from "@/lib/seo"
 import { AdSlot, LeaderboardAd, withNativeAds } from "@/components/AdSlot"
@@ -15,6 +15,24 @@ import { removeHistory, useHistory } from "@/lib/progress"
 
 const ScheduleBanner = lazy(() => import("@/components/ScheduleBanner"))
 
+// Everything below the hero renders once the page has loaded (hero image included), as a low-priority
+// time-sliced update: the hero paints first, its image doesn't share bandwidth with the card images, and the
+// rest of the page never blocks the main thread in one long task.
+function useAfterLoad() {
+  const [ready, setReady] = useState(false)
+  useEffect(() => {
+    let id = 0
+    const go = () => (id = requestAnimationFrame(() => startTransition(() => setReady(true))))
+    if (document.readyState === "complete") go()
+    else addEventListener("load", go, { once: true })
+    return () => {
+      removeEventListener("load", go)
+      cancelAnimationFrame(id)
+    }
+  }, [])
+  return ready
+}
+
 const GENRES = ["Action", "Adventure", "Comedy", "Drama", "Fantasy", "Horror", "Mecha", "Music", "Mystery", "Psychological", "Romance", "Sci-Fi", "Slice of Life", "Sports", "Supernatural", "Thriller", "Mahou Shoujo"]
 
 export default function Home() {
@@ -24,6 +42,7 @@ export default function Home() {
     path: "/",
   })
   const { data, isLoading, error } = useHome()
+  const ready = useAfterLoad()
 
   return (
     <>
@@ -43,7 +62,7 @@ export default function Home() {
         </Marquee>
       </div>
 
-      <Container className="mt-12 space-y-14">
+      {!ready ? <div className="min-h-screen" /> : <Container className="mt-12 space-y-14">
         {error && <p className="rounded-xl border border-primary/30 bg-primary/10 p-4 text-sm">Anime data is temporarily unavailable. Please try again shortly.</p>}
 
         <ContinueWatching />
@@ -101,7 +120,7 @@ export default function Home() {
             ))}
           </Rail>
         </Section>
-      </Container>
+      </Container>}
     </>
   )
 }

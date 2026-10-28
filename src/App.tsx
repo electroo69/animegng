@@ -1,13 +1,13 @@
-import { lazy, Suspense, useEffect } from "react"
+import { lazy, Suspense, useEffect, useRef } from "react"
 import { Route, Routes, useLocation } from "react-router-dom"
 import { Navbar } from "@/components/Navbar"
 import { Footer } from "@/components/Footer"
 import { ConsentBanner } from "@/components/social/ConsentBanner"
 import { ScrollProgress } from "@/components/ui/scroll-progress"
 import Home from "@/pages/Home"
-import NotFound from "@/pages/NotFound"
 
 // Route-level code splitting: the home page ships in the main bundle, the rest load on demand.
+const NotFound = lazy(() => import("@/pages/NotFound"))
 const AnimeDetail = lazy(() => import("@/pages/AnimeDetail"))
 const Watch = lazy(() => import("@/pages/Watch"))
 const Search = lazy(() => import("@/pages/Search"))
@@ -23,7 +23,11 @@ const Privacy = lazy(() => import("@/pages/Account").then((m) => ({ default: m.P
 
 function ScrollToTop() {
   const { pathname } = useLocation()
+  // Only on in-app navigation: a fresh page load already starts at the top, and scrolling then forces a layout.
+  const last = useRef(pathname)
   useEffect(() => {
+    if (last.current === pathname) return
+    last.current = pathname
     window.scrollTo({ top: 0 })
   }, [pathname])
   return null
