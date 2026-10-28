@@ -183,7 +183,7 @@ export function Privacy() {
       <h2 className={h}>Your choices</h2>
       <p className="mt-2">You can change your email, notification settings or password, and permanently delete your account and everything linked to it, in <Link to="/settings" className="text-primary hover:underline">Settings</Link>. You can clear browser-only data by clearing this site's storage.</p>
       <h2 className={h}>Contact</h2>
-      <p className="mt-2">Questions or removal requests: use the site's contact address on animegng.com.</p>
+      <p className="mt-2">Questions or removal requests: <a href="mailto:support@animegng.com" className="text-primary hover:underline">support@animegng.com</a></p>
     </Container>
   )
 }
