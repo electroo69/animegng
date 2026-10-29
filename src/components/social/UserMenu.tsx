@@ -1,7 +1,7 @@
 // Navbar account area: sign-in button, or notifications bell + avatar menu.
 import { useMangaSync } from "@/lib/manga"
 import { Link, useLocation, useNavigate } from "react-router-dom"
-import { Bell, Library, LogOut, MessageSquare, Settings, Tv } from "lucide-react"
+import { Bell, Library, LogOut, MessageSquare, Settings, Tv, UserRound } from "lucide-react"
 import { useQueryClient } from "@tanstack/react-query"
 import { useAuthDialog } from "@/components/social/AuthDialog"
 import { Avatar, Dropdown, ago } from "@/components/social/ui"
@@ -21,8 +21,10 @@ export function UserMenu() {
   if (isLoading) return <span className="size-9" />
   if (!user)
     return (
-      <button onClick={() => open()} className="h-10 shrink-0 rounded-full bg-white px-4 text-sm font-semibold text-black transition hover:bg-white/90">
-        Sign in
+      // Phones get a quiet account icon; the white pill is for wider screens.
+      <button onClick={() => open()} aria-label="Sign in" className="grid size-9 shrink-0 place-items-center rounded-full text-white/80 transition hover:bg-white/5 hover:text-white sm:h-10 sm:w-auto sm:bg-white sm:px-4 sm:text-sm sm:font-semibold sm:text-black sm:hover:bg-white/90 sm:hover:text-black">
+        <UserRound className="size-5 sm:hidden" />
+        <span className="hidden sm:inline">Sign in</span>
       </button>
     )
 

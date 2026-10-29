@@ -7,13 +7,43 @@ const COVERS = 'https://temp.compsci88.com/cover';
 const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36';
 const PAGE_SIZE = 32;
 
-async function page(path) {
+async function fetchPage(path) {
   const res = await fetch(BASE + path, {
     headers: { 'User-Agent': UA, Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8', Referer: BASE + '/' },
     signal: AbortSignal.timeout(20000),
   });
   if (!res.ok) throw Object.assign(new Error(`Manga source returned ${res.status}`), { status: res.status === 404 ? 404 : 502 });
-  return res.text();
+  return res;
+}
+const page = async (path) => (await fetchPage(path)).text();
+
+const toChapter = (id, name, date) => ({ id, name, number: Number(name.match(/(\d+(?:\.\d+)?)/)?.[1]) || null, date });
+
+// Full chapter lists can be 2 MB+ (One Piece). On Cloudflare, stream them through HTMLRewriter (native
+// parser, little CPU) so a long list doesn't hit the Worker CPU limit; on Node (dev, tests) use regexes.
+async function chapterList(id) {
+  const res = await fetchPage(`/series/${id}/full-chapter-list`);
+  if (typeof HTMLRewriter === 'undefined') {
+    return (await res.text()).split('<a href="/chapters/').slice(1).map((chunk) => {
+      const cid = chunk.match(/^([0-9A-Z]{26})"/)?.[1];
+      return cid ? toChapter(cid, one(/<span class="">([^<]+)<\/span>/, chunk) ?? 'Chapter', chunk.match(/datetime="([^"]+)"/)?.[1] ?? null) : null;
+    }).filter(Boolean);
+  }
+  const out = [];
+  let cur = null;
+  await new HTMLRewriter()
+    .on('a[href^="/chapters/"]', {
+      element(el) {
+        const cid = el.getAttribute('href').slice(10);
+        cur = /^[0-9A-Z]{26}$/.test(cid) ? { id: cid, name: '', date: null } : null;
+        if (cur) out.push(cur);
+      },
+    })
+    .on('a[href^="/chapters/"] span[class=""]', { text(t) { if (cur) cur.name += t.text; } })
+    .on('a[href^="/chapters/"] time', { element(el) { if (cur) cur.date = el.getAttribute('datetime'); } })
+    .transform(res)
+    .arrayBuffer();
+  return out.map((c) => toChapter(c.id, text(c.name) || 'Chapter', c.date));
 }
 
 const ENTITIES = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ' };
@@ -71,16 +101,10 @@ export async function home() {
 
 /** Series detail plus the full chapter list (newest first). */
 export async function series(id) {
-  const [html, list] = await Promise.all([page(`/series/${id}`), page(`/series/${id}/full-chapter-list`)]);
+  const [html, chapters] = await Promise.all([page(`/series/${id}`), chapterList(id)]);
   const title = one(/<h1 class="hidden md:block[^"]*">([^<]+)/, html) ?? one(/<h1[^>]*>([^<]+)/, html);
   if (!title) throw Object.assign(new Error('Manga not found'), { status: 404 });
   const field = (label) => html.match(new RegExp(`<strong>${label}:?\\s*</strong>([\\s\\S]*?)</li>`))?.[1] ?? '';
-  const chapters = list.split('<a href="/chapters/').slice(1).map((chunk) => {
-    const cid = chunk.match(/^([0-9A-Z]{26})"/)?.[1];
-    if (!cid) return null;
-    const name = one(/<span class="">([^<]+)<\/span>/, chunk) ?? 'Chapter';
-    return { id: cid, name, number: Number(name.match(/(\d+(?:\.\d+)?)/)?.[1]) || null, date: chunk.match(/datetime="([^"]+)"/)?.[1] ?? null };
-  }).filter(Boolean);
   return {
     id,
     title,

@@ -14,6 +14,13 @@ const SOCIAL_ORIGIN = 'https://animegng.drop-share-free.workers.dev';
 export async function onRequest(context) {
   const { request, env } = context;
   const url = new URL(request.url);
+  // A missing build file (old tab after a deploy, or mid-rollout) must 404, not get the SPA's index.html:
+  // browsers would cache that HTML under the script's URL and the page would stay broken.
+  if (url.pathname.startsWith('/assets/')) {
+    const res = await context.next();
+    if (res.headers.get('Content-Type')?.includes('text/html')) return new Response('Not found', { status: 404, headers: { 'Cache-Control': 'no-store' } });
+    return res;
+  }
   if (url.pathname.startsWith('/api/u/')) {
     const fwd = new Request(`${env.SOCIAL_ORIGIN || SOCIAL_ORIGIN}${url.pathname}${url.search}`, request);
     // The Worker trusts this IP (for rate limits) only alongside the shared secret.

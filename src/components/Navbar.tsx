@@ -153,7 +153,7 @@ export function Navbar() {
             </SheetContent>
           </Sheet>
 
-          <Logo className="h-[22px] sm:h-8" />
+          <Logo className="h-5 min-[360px]:h-6 sm:h-8" />
           <SectionSwitch />
 
           <nav className="ml-6 hidden items-center gap-1 lg:flex">
@@ -174,9 +174,9 @@ export function Navbar() {
           <button
             onClick={openSearch}
             aria-label={manga ? "Search manga" : "Search anime"}
-            className="group ml-auto flex h-10 items-center gap-2.5 rounded-full border border-white/10 bg-white/[0.04] pr-2 pl-3.5 text-sm text-white/50 transition hover:border-white/20 hover:bg-white/[0.07] hover:text-white/80 md:w-64 lg:w-72"
+            className="group ml-auto grid size-9 shrink-0 place-items-center rounded-full text-white/80 transition hover:bg-white/5 hover:text-white md:flex md:h-10 md:w-64 md:items-center md:gap-2.5 md:border md:border-white/10 md:bg-white/[0.04] md:pr-2 md:pl-3.5 md:text-sm md:text-white/50 md:hover:border-white/20 md:hover:bg-white/[0.07] md:hover:text-white/80 lg:w-72"
           >
-            <Search className="size-4" />
+            <Search className="size-5 md:size-4" />
             <span className="hidden whitespace-nowrap md:inline">{manga ? "Search manga…" : "Search anime…"}</span>
             <kbd className="ml-auto hidden items-center gap-0.5 rounded-md border border-white/10 bg-white/5 px-1.5 py-0.5 font-mono text-[10px] text-white/50 md:flex">
               Ctrl K
