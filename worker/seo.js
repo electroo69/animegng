@@ -479,7 +479,7 @@ async function sitemap(p, env, ctx) {
 const ROBOTS = `# AnimeGang — all crawlers, including AI search and assistant crawlers, are welcome.
 User-agent: *
 Allow: /
-Disallow: /api/
+Disallow: /api/u/
 Disallow: /ad.html
 Disallow: /native.html
 Disallow: /ad$
