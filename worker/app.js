@@ -2,6 +2,7 @@
 // Cloudflare Worker (see worker/index.js). Ported from "api without reanime/server.js": same routes and shapes,
 // served under /api on the site's own domain.
 import * as src from './sources.js';
+import * as manga from './manga.js';
 
 const MIN = 60_000;
 
@@ -192,6 +193,15 @@ const routes = [
   ['GET', '/search', (p, q) => cached(`search:${new URLSearchParams(q)}`, 10 * MIN, () => src.search(q)),
     'Search/filter (?q=&genre=Action,-Comedy&tag=&format=TV&status=&season=&year=&country=JP&sort=score_desc&page=&limit=)'],
   ['GET', '/search/facets', () => cached('facets', 24 * 60 * MIN, src.facets), 'All genres and tags'],
+
+  // Manga (MangaGang, WeebCentral)
+  ['GET', '/manga/home', () => cached('manga:home', 10 * MIN, manga.home), 'Popular and latest-updated manga'],
+  ['GET', '/manga/search', (p, q) => {
+    const page = Math.max(1, Math.min(num(q.page) ?? 1, 200));
+    return cached(`manga:search:${q.q ?? ''}:${q.sort ?? ''}:${page}`, 10 * MIN, () => manga.search({ q: (q.q ?? '').slice(0, 100), sort: q.sort, page }));
+  }, 'Search/browse manga (?q=&sort=popular|latest|relevance|az&page=)'],
+  ['GET', '/manga/series/:sid', (p) => cached(`manga:series:${p.sid}`, 15 * MIN, () => manga.series(p.sid)), 'Manga detail + chapter list (newest first)'],
+  ['GET', '/manga/chapter/:cid', (p) => cached(`manga:chapter:${p.cid}`, 6 * 60 * MIN, () => manga.chapter(p.cid)), 'Page image URLs for one chapter'],
 ];
 
 const compiled = routes.map(([method, pattern, handler]) => {
@@ -204,6 +214,7 @@ const compiled = routes.map(([method, pattern, handler]) => {
 // Edge cache lifetime per route, in seconds (shared by every visitor via the Cache API).
 const EDGE_TTL = [
   [/^\/search\/facets/, 86400],
+  [/^\/manga\/chapter\//, 86400],
   [/^\/(latest-aired|watch|servers)/, 300],
   [/^\/anime\/\d+\/episodes/, 900],
   [/./, 600],
@@ -230,6 +241,7 @@ export async function handle(request, path, ctx) {
     if (!m) continue;
     const params = Object.fromEntries(r.keys.map((k, i) => [k, decodeURIComponent(m[i + 1])]));
     if (params.id !== undefined && !/^\d+$/.test(params.id)) return json(400, { error: 'id must be a numeric AniList id (use /search to find it)' });
+    if ((params.sid ?? params.cid) !== undefined && !/^[0-9A-Z]{26}$/.test(params.sid ?? params.cid)) return json(400, { error: 'Invalid manga id' });
 
     const cache = globalThis.caches?.default;
     const hit = await cache?.match(request);

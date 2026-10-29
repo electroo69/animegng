@@ -1,7 +1,7 @@
 import { lazy, Suspense, useEffect, useState } from "react"
 import { UserMenu } from "@/components/social/UserMenu"
-import { Link, NavLink } from "react-router-dom"
-import { CalendarDays, Compass, Flame, Home, Menu, Search, Sparkles, Trophy } from "lucide-react"
+import { Link, NavLink, useLocation, useNavigate } from "react-router-dom"
+import { BookOpen, CalendarDays, Clock, Compass, Flame, Home, Menu, Search, Sparkles, Trophy, Tv } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 
@@ -15,10 +15,27 @@ export const NAV = [
   { to: "/browse/top", label: "Top Rated", icon: Trophy },
   { to: "/schedule", label: "Schedule", icon: CalendarDays },
   { to: "/search", label: "Browse", icon: Compass },
+  { to: "/manga", label: "Manga", icon: BookOpen },
 ]
 
+// MangaGang (/manga) has its own logo and menu.
+export const MANGA_NAV = [
+  { to: "/manga", label: "Home", icon: Home },
+  { to: "/manga/browse?sort=popular", label: "Popular", icon: Flame },
+  { to: "/manga/browse?sort=latest", label: "Latest Updates", icon: Clock },
+  { to: "/manga/browse?sort=az", label: "A–Z", icon: Compass },
+  { to: "/", label: "Anime", icon: Tv },
+]
+
+export const useIsManga = () => useLocation().pathname.startsWith("/manga")
+
 export function Logo({ className }: { className?: string }) {
-  return (
+  const manga = useIsManga()
+  return manga ? (
+    <Link to="/manga" aria-label="MangaGang home" className={cn("block shrink-0", className)}>
+      <img src="/mangagang-logo.webp" alt="MangaGang" width={444} height={96} className="h-full w-auto select-none" draggable={false} />
+    </Link>
+  ) : (
     <Link to="/" aria-label="AnimeGang home" className={cn("block shrink-0", className)}>
       <img src="/logo-nav.webp" alt="AnimeGang" width={451} height={96} className="h-full w-auto select-none" draggable={false} />
     </Link>
@@ -30,6 +47,13 @@ export function Navbar() {
   const [searchOpen, setSearchOpen] = useState(false)
   const [searchUsed, setSearchUsed] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
+  const manga = useIsManga()
+  const navigate = useNavigate()
+  const { pathname, search } = useLocation()
+  const links = manga ? MANGA_NAV : NAV
+  // NavLink ignores the query string; manga links differ only by ?sort=, so match it here.
+  const active = (to: string) => (to.includes("?") ? pathname + search === to : to === "/" || to === "/manga" ? pathname === to : pathname.startsWith(to))
+  const openSearch = () => (manga ? navigate("/manga/browse") : setSearchOpen(true))
 
   if (searchOpen && !searchUsed) setSearchUsed(true)
 
@@ -37,12 +61,13 @@ export function Navbar() {
     const onKey = (e: KeyboardEvent) => {
       if ((e.key === "k" && (e.metaKey || e.ctrlKey)) || (e.key === "/" && !/input|textarea/i.test((e.target as HTMLElement).tagName))) {
         e.preventDefault()
-        setSearchOpen((o) => !o)
+        if (location.pathname.startsWith("/manga")) navigate("/manga/browse")
+        else setSearchOpen((o) => !o)
       }
     }
     window.addEventListener("keydown", onKey)
     return () => window.removeEventListener("keydown", onKey)
-  }, [])
+  }, [navigate])
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 24)
@@ -68,18 +93,15 @@ export function Navbar() {
               <SheetTitle className="sr-only">Menu</SheetTitle>
               <Logo className="h-8" />
               <nav className="mt-6 flex flex-col gap-1">
-                {NAV.map(({ to, label, icon: Icon }) => (
+                {links.map(({ to, label, icon: Icon }) => (
                   <NavLink
                     key={to}
                     to={to}
-                    end={to === "/"}
                     onClick={() => setMenuOpen(false)}
-                    className={({ isActive }) =>
-                      cn(
-                        "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-white/70 transition hover:bg-white/5 hover:text-white",
-                        isActive && "bg-primary/10 text-white [&_svg]:text-primary",
-                      )
-                    }
+                    className={cn(
+                      "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-white/70 transition hover:bg-white/5 hover:text-white",
+                      active(to) && "bg-primary/10 text-white [&_svg]:text-primary",
+                    )}
                   >
                     <Icon className="size-4" />
                     {label}
@@ -92,16 +114,14 @@ export function Navbar() {
           <Logo className="h-7 sm:h-8" />
 
           <nav className="ml-6 hidden items-center gap-1 lg:flex">
-            {NAV.slice(1).map(({ to, label }) => (
+            {links.slice(1).map(({ to, label }) => (
               <NavLink
                 key={to}
                 to={to}
-                className={({ isActive }) =>
-                  cn(
-                    "relative rounded-full px-3.5 py-1.5 text-[13px] font-medium text-white/65 transition-colors hover:text-white",
-                    isActive && "text-white after:absolute after:inset-x-3.5 after:-bottom-[3px] after:h-[2px] after:rounded-full after:bg-gradient-to-r after:from-brand-red after:to-brand-blue",
-                  )
-                }
+                className={cn(
+                  "relative rounded-full px-3.5 py-1.5 text-[13px] font-medium text-white/65 transition-colors hover:text-white",
+                  active(to) && "text-white after:absolute after:inset-x-3.5 after:-bottom-[3px] after:h-[2px] after:rounded-full after:bg-gradient-to-r after:from-brand-red after:to-brand-blue",
+                )}
               >
                 {label}
               </NavLink>
@@ -109,12 +129,12 @@ export function Navbar() {
           </nav>
 
           <button
-            onClick={() => setSearchOpen(true)}
-            aria-label="Search anime"
+            onClick={openSearch}
+            aria-label={manga ? "Search manga" : "Search anime"}
             className="group ml-auto flex h-10 items-center gap-2.5 rounded-full border border-white/10 bg-white/[0.04] pr-2 pl-3.5 text-sm text-white/50 transition hover:border-white/20 hover:bg-white/[0.07] hover:text-white/80 sm:w-72"
           >
             <Search className="size-4" />
-            <span className="hidden sm:inline">Search anime…</span>
+            <span className="hidden sm:inline">{manga ? "Search manga…" : "Search anime…"}</span>
             <kbd className="ml-auto hidden items-center gap-0.5 rounded-md border border-white/10 bg-white/5 px-1.5 py-0.5 font-mono text-[10px] text-white/50 sm:flex">
               Ctrl K
             </kbd>

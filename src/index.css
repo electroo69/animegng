@@ -329,3 +329,15 @@ video::-webkit-media-text-track-container {
   .animate-shiny-text { animation: none; background-image: none; }
   .animate-shimmer-slide { display: none; }
 }
+
+/* MangaGang (/manga, App.tsx MangaTheme): the logo's green replaces the red accent; text on green is dark. */
+.theme-manga {
+    --brand-red: #2fe92b;
+    --brand-red-deep: #1fb81c;
+    --primary: #2fe92b;
+    --primary-foreground: #04170a;
+    --ring: rgb(47 233 43 / 70%);
+    --chart-1: #2fe92b;
+    --sidebar-primary: #2fe92b;
+    --sidebar-primary-foreground: #04170a;
+}

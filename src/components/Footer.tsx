@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom"
-import { Logo, NAV } from "@/components/Navbar"
+import { Logo, MANGA_NAV, NAV, useIsManga } from "@/components/Navbar"
 import { DotPattern } from "@/components/ui/dot-pattern"
 import { GENRES, genreHref } from "@/lib/seo"
 
@@ -22,6 +22,7 @@ function recentSeasons() {
 }
 
 export function Footer() {
+  const manga = useIsManga()
   return (
     <footer className="relative mt-24 overflow-hidden border-t border-white/[0.06]">
       <DotPattern className="text-white/[0.06] [mask-image:radial-gradient(500px_circle_at_top,white,transparent)]" />
@@ -30,11 +31,13 @@ export function Footer() {
         <div className="max-w-sm">
           <Logo className="h-9" />
           <p className="mt-4 text-sm leading-relaxed text-white/50">
-            Stream anime in HD with sub and dub. Episode data comes from AniList and ani.zip. AnimeGang doesn't store any files on its servers.
+            {manga
+              ? "Read manga, manhwa and manhua free. MangaGang is AnimeGang's manga section and doesn't store any files on its servers."
+              : "Stream anime in HD with sub and dub. Episode data comes from AniList and ani.zip. AnimeGang doesn't store any files on its servers."}
           </p>
         </div>
         <div className="grid grid-cols-2 gap-x-16 gap-y-3 text-sm sm:grid-cols-3">
-          {NAV.map((n) => (
+          {(manga ? MANGA_NAV : NAV).map((n) => (
             <Link key={n.to} to={n.to} className="text-white/55 transition hover:text-white">
               {n.label}
             </Link>

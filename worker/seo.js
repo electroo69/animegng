@@ -241,6 +241,7 @@ async function pageFor(url, env, ctx) {
   if ((m = p.match(/^\/browse\/([\w-]+)$/))) return browse(m[1], env, ctx);
   if ((m = p.match(/^\/genre\/([\w-]+)$/))) return genre(m[1], env, ctx);
   if ((m = p.match(/^\/season\/(\d{4})\/(\w+)$/))) return season(Number(m[1]), m[2], env, ctx);
+  if (p === '/manga') return { ...staticPage('MangaGang', 'Read manga, manhwa and manhua online free on MangaGang: popular series, the latest chapter updates and a fast long-strip reader.', '/manga'), title: 'MangaGang — Read Manga Online Free' };
   if (p === '/schedule') return staticPage('Anime Airing Schedule', 'This week’s anime release schedule with air times in your timezone and countdowns to every new episode.', '/schedule');
   // Filtered search result pages duplicate genre/season pages: keep them out of the index.
   if (p === '/search') return staticPage('Browse & Search Anime', 'Search thousands of anime by title, genre, format, season, year and status.', '/search', url.search.length > 1);
