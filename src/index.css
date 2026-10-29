@@ -341,3 +341,28 @@ video::-webkit-media-text-track-container {
     --sidebar-primary: #2fe92b;
     --sidebar-primary-foreground: #04170a;
 }
+
+/* Anime ⇄ Manga switch (Navbar SectionSwitch): everything below the navbar pans sideways, AnimeGang ->
+   MangaGang to the left and back to the right. The navbar is its own layer that doesn't animate, so it stays
+   in place and shows the new state live (logo, accent colour, the switch's sliding pill). */
+.site-header { view-transition-name: site-header; }
+::view-transition-group(site-header), ::view-transition-new(site-header) { animation: none; }
+::view-transition-old(site-header) { display: none; }
+@media (prefers-reduced-motion: no-preference) {
+  ::view-transition-old(root), ::view-transition-new(root) { animation: 0.55s cubic-bezier(0.65, 0, 0.35, 1) both; mix-blend-mode: normal; }
+  html[data-vt="manga"]::view-transition-old(root) { animation-name: vt-to-left; }
+  html[data-vt="manga"]::view-transition-new(root) { animation-name: vt-from-right; }
+  html[data-vt="anime"]::view-transition-old(root) { animation-name: vt-to-right; }
+  html[data-vt="anime"]::view-transition-new(root) { animation-name: vt-from-left; }
+}
+/* Reduced motion (e.g. Windows "Animation effects" off): no sideways movement, just a short cross-fade. */
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(root) { animation: vt-fade-out 0.2s ease both; }
+  ::view-transition-new(root) { animation: vt-fade-in 0.25s ease both; }
+}
+@keyframes vt-fade-out { to { opacity: 0; } }
+@keyframes vt-fade-in { from { opacity: 0; } }
+@keyframes vt-to-left { to { transform: translateX(-100%); } }
+@keyframes vt-from-right { from { transform: translateX(100%); } }
+@keyframes vt-to-right { to { transform: translateX(100%); } }
+@keyframes vt-from-left { from { transform: translateX(-100%); } }

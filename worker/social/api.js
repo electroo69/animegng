@@ -36,6 +36,43 @@ async function historyPut(env, user, d) {
     .run();
 }
 
+// ------------------------------------------------------------------ manga (MangaGang: continue reading, saved, reading list)
+
+const MANGA_ID = /^[0-9A-Z]{26}$/;
+const MANGA_LISTS = new Set(['saved', 'plan']);
+const mangaId = (v, name) => (MANGA_ID.test(String(v)) ? String(v) : fail(400, `Invalid ${name}`));
+const mangaList = (v) => (MANGA_LISTS.has(v) ? v : fail(400, 'Invalid list'));
+function mangaCard(m) {
+  if (!m || typeof m !== 'object') fail(400, 'Missing manga');
+  return JSON.stringify({ id: mangaId(m.id, 'manga id'), title: String(m.title ?? '').slice(0, 200), cover: String(m.cover ?? '').slice(0, 300), slug: m.slug ? String(m.slug).slice(0, 200) : null });
+}
+
+async function mangaHistoryList(env, user) {
+  const { results } = await env.DB.prepare('SELECT series, chapter_id, chapter_name, updated_at FROM manga_history WHERE user_id = ? ORDER BY updated_at DESC LIMIT 60').bind(user.id).all();
+  return parse(results, 'series');
+}
+
+async function mangaHistoryPut(env, user, d) {
+  const series = mangaCard(d.series);
+  await env.DB.prepare(`INSERT INTO manga_history (user_id, series_id, series, chapter_id, chapter_name, updated_at) VALUES (?, ?, ?, ?, ?, ?)
+    ON CONFLICT (user_id, series_id) DO UPDATE SET series = excluded.series, chapter_id = excluded.chapter_id, chapter_name = excluded.chapter_name, updated_at = excluded.updated_at
+    WHERE excluded.updated_at >= manga_history.updated_at`)
+    .bind(user.id, JSON.parse(series).id, series, mangaId(d.chapter_id, 'chapter id'), String(d.chapter_name ?? 'Chapter').slice(0, 120), Math.min(Number(d.updated_at) || now(), now()))
+    .run();
+}
+
+async function mangaLibraryList(env, user) {
+  const { results } = await env.DB.prepare('SELECT list, series, added_at FROM manga_library WHERE user_id = ? ORDER BY added_at DESC LIMIT 1000').bind(user.id).all();
+  return parse(results, 'series');
+}
+
+async function mangaLibraryPut(env, user, list, d) {
+  const series = mangaCard(d.series);
+  await env.DB.prepare('INSERT OR IGNORE INTO manga_library (user_id, list, series_id, series, added_at) VALUES (?, ?, ?, ?, ?)')
+    .bind(user.id, mangaList(list), JSON.parse(series).id, series, Math.min(Number(d.added_at) || now(), now()))
+    .run();
+}
+
 // ------------------------------------------------------------------ comments
 
 const COMMENT_COLS = `c.id, c.anime_id, c.episode, c.parent_id, c.body, c.spoiler, c.ts, c.likes, c.dislikes, c.reply_count, c.deleted, c.created_at,
@@ -165,6 +202,32 @@ on('POST', '/history/import', async (r, env, { me, data }) => {
 });
 on('DELETE', '/history/:anime', async (r, env, { me, p }) => {
   await env.DB.prepare('DELETE FROM history WHERE user_id = ? AND anime_id = ?').bind(me.id, int(p.anime, 'anime')).run();
+  return json({ ok: true });
+});
+
+on('GET', '/manga/history', async (r, env, { me }) => json({ items: await mangaHistoryList(env, me) }));
+on('PUT', '/manga/history', async (r, env, { me, data }) => (await mangaHistoryPut(env, me, data), json({ ok: true })));
+on('POST', '/manga/history/import', async (r, env, { me, data }) => {
+  for (const e of (Array.isArray(data.items) ? data.items : []).slice(0, 60)) await mangaHistoryPut(env, me, e).catch(() => {});
+  return json({ items: await mangaHistoryList(env, me) });
+});
+on('DELETE', '/manga/history/:series', async (r, env, { me, p }) => {
+  await env.DB.prepare('DELETE FROM manga_history WHERE user_id = ? AND series_id = ?').bind(me.id, mangaId(p.series, 'manga id')).run();
+  return json({ ok: true });
+});
+on('GET', '/manga/library', async (r, env, { me }) => json({ items: await mangaLibraryList(env, me) }));
+on('POST', '/manga/library/import', async (r, env, { me, data }) => {
+  for (const e of (Array.isArray(data.items) ? data.items : []).slice(0, 500)) await mangaLibraryPut(env, me, e.list, e).catch(() => {});
+  return json({ items: await mangaLibraryList(env, me) });
+});
+on('PUT', '/manga/library/:list', async (r, env, { me, p, data }) => {
+  const n = (await env.DB.prepare('SELECT COUNT(*) AS n FROM manga_library WHERE user_id = ?').bind(me.id).first()).n;
+  if (n >= 1000) fail(400, 'Your manga library is full (1000 entries)');
+  await mangaLibraryPut(env, me, p.list, data);
+  return json({ ok: true });
+});
+on('DELETE', '/manga/library/:list/:series', async (r, env, { me, p }) => {
+  await env.DB.prepare('DELETE FROM manga_library WHERE user_id = ? AND list = ? AND series_id = ?').bind(me.id, mangaList(p.list), mangaId(p.series, 'manga id')).run();
   return json({ ok: true });
 });
 

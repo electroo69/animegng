@@ -1,8 +1,9 @@
 import { useMemo, useState } from "react"
 import { Link, useParams } from "react-router-dom"
-import { ArrowDownUp, BadgeCheck, BookOpen, Search, Tv } from "lucide-react"
+import { ArrowDownUp, BadgeCheck, Bookmark, BookOpen, ListPlus, Search, Tv } from "lucide-react"
+import { LeaderboardAd } from "@/components/AdSlot"
 import { Container } from "@/components/Section"
-import { readHref, useMangaProgress, useMangaSeries } from "@/lib/manga"
+import { readHref, toggleShelf, useMangaProgress, useMangaSeries, useMangaShelves, type MangaShelf, type StoredManga } from "@/lib/manga"
 import { useHead } from "@/lib/seo"
 import { cn } from "@/lib/utils"
 
@@ -100,12 +101,15 @@ export default function MangaDetail() {
                   Latest: {latest.name}
                 </Link>
               )}
+              <ShelfButton list="saved" series={m} icon={Bookmark} label="Save" activeLabel="Saved" />
+              <ShelfButton list="plan" series={m} icon={ListPlus} label="Add to reading list" activeLabel="In reading list" />
             </div>
           </div>
         </Container>
       </section>
 
       <Container className="mt-4">
+        <LeaderboardAd className="mb-10" />
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h2 className="text-xl font-bold tracking-tight text-white">Chapters</h2>
           <div className="flex items-center gap-2">
@@ -127,6 +131,23 @@ export default function MangaDetail() {
         )}
       </Container>
     </>
+  )
+}
+
+function ShelfButton({ list, series, icon: Icon, label, activeLabel }: { list: MangaShelf; series: StoredManga; icon: React.ComponentType<{ className?: string }>; label: string; activeLabel: string }) {
+  const on = useMangaShelves().some((e) => e.list === list && e.series.id === series.id)
+  return (
+    <button
+      onClick={() => toggleShelf(list, series)}
+      aria-pressed={on}
+      className={cn(
+        "flex h-12 items-center gap-2 rounded-[14px] border px-5 text-[15px] font-semibold transition",
+        on ? "border-primary/60 bg-primary/15 text-white [&_svg]:fill-primary [&_svg]:text-primary" : "border-white/15 bg-white/[0.06] text-white hover:border-white/30 hover:bg-white/[0.12]",
+      )}
+    >
+      <Icon className="size-4" />
+      {on ? activeLabel : label}
+    </button>
   )
 }
 

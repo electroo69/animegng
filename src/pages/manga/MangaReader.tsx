@@ -2,6 +2,7 @@ import { useEffect } from "react"
 import { Link, useNavigate, useParams } from "react-router-dom"
 import { useQueryClient } from "@tanstack/react-query"
 import { ArrowLeft, ChevronLeft, ChevronRight, Loader2 } from "lucide-react"
+import { LeaderboardAd } from "@/components/AdSlot"
 import { api } from "@/lib/api"
 import { mangaHref, readHref, saveMangaProgress, useMangaChapter, useMangaSeries } from "@/lib/manga"
 import { useHead } from "@/lib/seo"
@@ -104,6 +105,7 @@ export default function MangaReader() {
 
       {data && (
         <div className="mx-auto flex max-w-4xl flex-col items-center gap-4 px-4 py-12 text-center">
+          <LeaderboardAd className="mb-4" />
           <p className="text-sm text-white/55">{next ? `Up next: ${next.name}` : "You're all caught up on this series."}</p>
           {nav}
         </div>

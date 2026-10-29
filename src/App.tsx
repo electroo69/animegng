@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useRef } from "react"
+import { lazy, Suspense, useEffect, useLayoutEffect, useRef } from "react"
 import { Route, Routes, useLocation } from "react-router-dom"
 import { Navbar } from "@/components/Navbar"
 import { Footer } from "@/components/Footer"
@@ -22,6 +22,7 @@ const ResetPassword = lazy(() => import("@/pages/Account").then((m) => ({ defaul
 const MangaHome = lazy(() => import("@/pages/manga/MangaHome"))
 const MangaBrowse = lazy(() => import("@/pages/manga/MangaBrowse"))
 const MangaDetail = lazy(() => import("@/pages/manga/MangaDetail"))
+const MangaLibrary = lazy(() => import("@/pages/manga/MangaLibrary"))
 const MangaReader = lazy(() => import("@/pages/manga/MangaReader"))
 const Privacy = lazy(() => import("@/pages/Account").then((m) => ({ default: m.Privacy })))
 
@@ -40,7 +41,8 @@ function ScrollToTop() {
 // MangaGang (/manga) swaps the red accent for green. Set on <html> so dialogs and sheets portaled to <body> follow.
 function MangaTheme() {
   const manga = useLocation().pathname.startsWith("/manga")
-  useEffect(() => {
+  // Layout effect: the theme must change in the same frame as the route, so a view transition captures both.
+  useLayoutEffect(() => {
     document.documentElement.classList.toggle("theme-manga", manga)
   }, [manga])
   return null
@@ -71,6 +73,7 @@ export default function App() {
             <Route path="/privacy" element={<Privacy />} />
             <Route path="/manga" element={<MangaHome />} />
             <Route path="/manga/browse" element={<MangaBrowse />} />
+            <Route path="/manga/library" element={<MangaLibrary />} />
             <Route path="/manga/read/:sid/:cid" element={<MangaReader />} />
             <Route path="/manga/:id/:slug?" element={<MangaDetail />} />
             <Route path="*" element={<NotFound />} />
