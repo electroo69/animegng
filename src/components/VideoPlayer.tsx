@@ -219,8 +219,21 @@ export function VideoPlayer({ stream, poster, startAt = 0, autoplay, autoSkipInt
     if (v && !locked) v.currentTime = Math.max(0, Math.min(v.duration || 0, v.currentTime + d))
   }, [locked])
   const toggleFs = useCallback(() => {
-    if (document.fullscreenElement) document.exitFullscreen()
-    else wrap.current?.requestFullscreen?.()
+    type FsDoc = Document & { webkitFullscreenElement?: Element; webkitExitFullscreen?: () => void }
+    type FsEl = HTMLElement & { webkitRequestFullscreen?: () => void }
+    const d = document as FsDoc
+    if (d.fullscreenElement || d.webkitFullscreenElement) {
+      ;(d.exitFullscreen?.bind(d) ?? d.webkitExitFullscreen?.bind(d))?.()
+      return
+    }
+    const el = wrap.current as FsEl | null
+    const v = video.current as (HTMLVideoElement & { webkitEnterFullscreen?: () => void }) | null
+    if (el?.requestFullscreen) {
+      el.requestFullscreen()
+        .then(() => (screen.orientation as ScreenOrientation & { lock?: (o: string) => Promise<void> })?.lock?.("landscape").catch(() => {}))
+        .catch(() => v?.webkitEnterFullscreen?.())
+    } else if (el?.webkitRequestFullscreen) el.webkitRequestFullscreen()
+    else v?.webkitEnterFullscreen?.()
   }, [])
 
   // Show controls on activity, hide after a pause while playing.
@@ -236,9 +249,13 @@ export function VideoPlayer({ stream, poster, startAt = 0, autoplay, autoSkipInt
   }, [])
 
   useEffect(() => {
-    const onFs = () => setFullscreen(document.fullscreenElement === wrap.current)
+    const onFs = () => setFullscreen((document.fullscreenElement ?? (document as Document & { webkitFullscreenElement?: Element }).webkitFullscreenElement) === wrap.current)
     document.addEventListener("fullscreenchange", onFs)
-    return () => document.removeEventListener("fullscreenchange", onFs)
+    document.addEventListener("webkitfullscreenchange", onFs)
+    return () => {
+      document.removeEventListener("fullscreenchange", onFs)
+      document.removeEventListener("webkitfullscreenchange", onFs)
+    }
   }, [])
 
   // Keyboard shortcuts while the page (not an input) has focus.
@@ -349,10 +366,10 @@ export function VideoPlayer({ stream, poster, startAt = 0, autoplay, autoSkipInt
       )}
 
       {/* Bottom controls */}
-      <div className={cn("absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent px-4 pt-14 pb-3 transition-opacity duration-300", showUi ? "opacity-100" : "pointer-events-none opacity-0")}>
+      <div className={cn("absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent px-2 pt-10 pb-1.5 transition-opacity sm:px-4 sm:pt-14 sm:pb-3 duration-300", showUi ? "opacity-100" : "pointer-events-none opacity-0")}>
         {/* Seek bar */}
         <div
-          className={cn("group/seek relative mb-2 h-4", locked ? "cursor-not-allowed" : "cursor-pointer")}
+          className={cn("group/seek relative mb-1 h-6 touch-none sm:mb-2 sm:h-4", locked ? "cursor-not-allowed" : "cursor-pointer")}
           onMouseMove={(e) => {
             const r = e.currentTarget.getBoundingClientRect()
             const x = Math.max(0, Math.min(r.width, e.clientX - r.left))
@@ -383,13 +400,13 @@ export function VideoPlayer({ stream, poster, startAt = 0, autoplay, autoSkipInt
           <CtrlBtn label={playing ? "Pause (k)" : "Play (k)"} onClick={toggle}>
             {playing ? <Pause className="size-5 fill-white" /> : <Play className="size-5 fill-white" />}
           </CtrlBtn>
-          <CtrlBtn label="Back 10s (j)" onClick={() => seekBy(-10)}>
+          <CtrlBtn label="Back 10s (j)" onClick={() => seekBy(-10)} className="hidden sm:grid">
             <RotateCcw className="size-[18px]" />
           </CtrlBtn>
-          <CtrlBtn label="Forward 10s (l)" onClick={() => seekBy(10)}>
+          <CtrlBtn label="Forward 10s (l)" onClick={() => seekBy(10)} className="hidden sm:grid">
             <RotateCw className="size-[18px]" />
           </CtrlBtn>
-          <div className="group/vol flex items-center">
+          <div className="group/vol hidden items-center sm:flex">
             <CtrlBtn label="Mute (m)" onClick={() => updatePrefs({ muted: !prefs.muted })}>
               <VolIcon className="size-5" />
             </CtrlBtn>
@@ -404,11 +421,11 @@ export function VideoPlayer({ stream, poster, startAt = 0, autoplay, autoSkipInt
               className="w-0 accent-primary opacity-0 transition-all group-hover/vol:w-20 group-hover/vol:opacity-100"
             />
           </div>
-          <span className="ml-2 font-mono text-xs text-white/80 tabular-nums">
+          <span className="ml-1 truncate font-mono text-[11px] text-white/80 tabular-nums sm:ml-2 sm:text-xs">
             {fmt(time)} / {fmt(duration)}
           </span>
 
-          <div className="relative ml-auto flex items-center gap-1">
+          <div className="relative ml-auto flex shrink-0 items-center gap-0.5 sm:gap-1">
             {stream.subtitles.length > 0 && (
               <CtrlBtn label="Subtitles (c)" onClick={() => setMenu(menu === "subs" ? null : "subs")} active={prefs.subtitle !== "Off"}>
                 <Captions className="size-5" />
@@ -418,7 +435,7 @@ export function VideoPlayer({ stream, poster, startAt = 0, autoplay, autoSkipInt
               <Settings className={cn("size-5 transition", menu === "settings" && "rotate-45")} />
             </CtrlBtn>
             {document.pictureInPictureEnabled && (
-              <CtrlBtn label="Picture in picture" onClick={() => (document.pictureInPictureElement ? document.exitPictureInPicture() : video.current?.requestPictureInPicture())}>
+              <CtrlBtn label="Picture in picture" className="hidden sm:grid" onClick={() => (document.pictureInPictureElement ? document.exitPictureInPicture() : video.current?.requestPictureInPicture())}>
                 <PictureInPicture2 className="size-5" />
               </CtrlBtn>
             )}
@@ -479,9 +496,9 @@ export function VideoPlayer({ stream, poster, startAt = 0, autoplay, autoSkipInt
   )
 }
 
-function CtrlBtn({ label, onClick, active, children }: { label: string; onClick: () => void; active?: boolean; children: React.ReactNode }) {
+function CtrlBtn({ label, onClick, active, className, children }: { label: string; onClick: () => void; active?: boolean; className?: string; children: React.ReactNode }) {
   return (
-    <button onClick={onClick} title={label} aria-label={label} className={cn("grid size-9 place-items-center rounded-lg transition hover:bg-white/15", active && "text-primary")}>
+    <button onClick={onClick} title={label} aria-label={label} className={cn("grid size-9 place-items-center rounded-lg transition hover:bg-white/15", active && "text-primary", className)}>
       {children}
     </button>
   )
