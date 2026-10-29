@@ -22,7 +22,17 @@ export default function MangaBrowse() {
   const { data, isLoading, isFetching, error } = useMangaSearch(q, sort, page)
   const heading = q ? `Results for “${q}”` : SORTS.find(([s]) => s === sort)?.[1] ?? "Browse"
 
-  useHead({ title: `${q ? `${q} — Manga Search` : `${heading} Manga`} | MangaGang`, description: "Search and browse manga, manhwa and manhua on MangaGang.", path: "/manga/browse", noindex: true })
+  const SEO: Record<string, [string, string]> = {
+    popular: ["Popular Manga", "The most-read manga, manhwa and manhua series right now."],
+    latest: ["Latest Manga Updates", "Manga with new chapters, newest first."],
+    az: ["Manga A–Z", "Every series on MangaGang, alphabetically."],
+  }
+  const [seoTitle, seoDesc] = SEO[sort] ?? SEO.popular
+  useHead(
+    q
+      ? { title: `${q.slice(0, 60)} — Manga Search | MangaGang`, description: `Manga matching “${q.slice(0, 60)}” on MangaGang.`, path: "/manga/browse", noindex: true }
+      : { title: `${seoTitle}${page > 1 ? ` — Page ${page}` : ""} | MangaGang`, description: `${seoDesc} Read them free on MangaGang.`, path: `/manga/browse?sort=${sort}${page > 1 ? `&page=${page}` : ""}` },
+  )
 
   const href = (next: Record<string, string | number>) => {
     const p = new URLSearchParams({ ...(q && { q }), sort, page: "1", ...Object.fromEntries(Object.entries(next).map(([k, v]) => [k, String(v)])) })

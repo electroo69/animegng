@@ -2,6 +2,7 @@
 import { keepPreviousData, useQuery } from "@tanstack/react-query"
 import { useEffect, useSyncExternalStore } from "react"
 import { api } from "@/lib/api"
+import { slugify } from "@/lib/seo"
 import { sapi, useMe } from "@/lib/social"
 
 export interface MangaCard {
@@ -53,8 +54,8 @@ export const useMangaSeries = (id: string | undefined) =>
 export const useMangaChapter = (id: string | undefined) =>
   useQuery({ queryKey: ["manga", "chapter", id], queryFn: () => api<{ id: string; pages: string[] }>(`/manga/chapter/${id}`), enabled: !!id, staleTime: 60 * MIN })
 
-const slugify = (s: string) => s.normalize("NFKD").replace(/[^\w\s-]/g, "").trim().replace(/\s+/g, "-") || "manga"
-export const mangaHref = (m: { id: string; title: string; slug?: string | null }) => `/manga/${m.id}/${m.slug || slugify(m.title)}`
+// Same slug as the edge canonical (worker/seo.js mangaPath), so every link points at one URL per series.
+export const mangaHref = (m: { id: string; title: string }) => `/manga/${m.id}/${slugify(m.title) || "manga"}`
 export const readHref = (seriesId: string, chapterId: string) => `/manga/read/${seriesId}/${chapterId}`
 
 // ------------------------------------------------------------------ continue reading, Saved, Reading list

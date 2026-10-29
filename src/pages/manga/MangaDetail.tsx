@@ -3,8 +3,8 @@ import { Link, useParams } from "react-router-dom"
 import { ArrowDownUp, BadgeCheck, Bookmark, BookOpen, ListPlus, Search, Tv } from "lucide-react"
 import { LeaderboardAd } from "@/components/AdSlot"
 import { Container } from "@/components/Section"
-import { readHref, toggleShelf, useMangaProgress, useMangaSeries, useMangaShelves, type MangaShelf, type StoredManga } from "@/lib/manga"
-import { useHead } from "@/lib/seo"
+import { mangaHref, readHref, toggleShelf, useMangaProgress, useMangaSeries, useMangaShelves, type MangaShelf, type StoredManga } from "@/lib/manga"
+import { clip, useHead } from "@/lib/seo"
 import { cn } from "@/lib/utils"
 
 const dateFmt = new Intl.DateTimeFormat(undefined, { year: "numeric", month: "short", day: "numeric" })
@@ -19,8 +19,10 @@ export default function MangaDetail() {
 
   useHead({
     title: m ? `Read ${m.title} Manga Online Free | MangaGang` : undefined,
-    description: m ? (m.description || `Read ${m.title} online free on MangaGang.`).slice(0, 160) : undefined,
-    path: m ? `/manga/${m.id}` : undefined,
+    description: m
+      ? clip(`Read ${m.title} online free in English${m.chapters.length ? ` — all ${m.chapters.length} chapters` : ""}${m.chapters[0] ? `, latest ${m.chapters[0].name}` : ""}. ${m.description}`)
+      : undefined,
+    path: m ? mangaHref(m) : undefined,
     image: m?.cover_large,
   })
 

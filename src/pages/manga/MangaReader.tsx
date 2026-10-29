@@ -22,10 +22,10 @@ export default function MangaReader() {
   const next = index > 0 ? series!.chapters[index - 1] : undefined
 
   useHead({
-    title: series && current ? `${series.title} ${current.name} | MangaGang` : "Reading | MangaGang",
-    description: series ? `Read ${series.title} ${current?.name ?? ""} online free on MangaGang.` : undefined,
+    title: series && current ? `${series.title} ${current.name} — Read Online Free | MangaGang` : undefined,
+    description: series && current ? `Read ${series.title} ${current.name} online free in English on MangaGang.${next ? ` Next: ${next.name}.` : ""}` : undefined,
     path: sid && cid ? readHref(sid, cid) : undefined,
-    noindex: true,
+    image: series?.cover_large,
   })
 
   useEffect(() => {

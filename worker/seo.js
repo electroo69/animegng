@@ -6,6 +6,8 @@
 //
 // Used by both the Pages middleware (functions/_middleware.js) and the Worker (worker/index.js).
 
+import * as manga from './manga.js';
+
 export const SITE = 'https://animegng.com';
 const NAME = 'AnimeGang';
 const DEFAULT_DESC = 'Watch anime online free in HD with English sub and dub. Browse trending, seasonal and top-rated anime, episode guides and the weekly airing schedule on AnimeGang.';
@@ -232,6 +234,132 @@ async function season(year, s, env, ctx) {
 
 const staticPage = (title, description, canonical, noindex = false) => ({ title: `${title} | ${NAME}`, description, canonical, noindex, jsonld: [], body: `<h1>${esc(title)}</h1><p>${esc(description)}</p>` });
 
+// ------------------------------------------------------------------ MangaGang (/manga)
+
+const MANGA = 'MangaGang';
+const MANGA_DESC = 'Read manga, manhwa and manhua online free on MangaGang: popular series, the latest chapter updates and a fast long-strip reader.';
+const MANGA_IMAGE = `${SITE}/mangagang-logo.webp`;
+export const mangaPath = (m) => `/manga/${m.id}/${slugify(m.title) || 'manga'}`;
+const mangaRead = (sid, cid) => `/manga/read/${sid}/${cid}`;
+const MANGA_SORTS = { popular: ['Popular Manga', 'The most-read manga, manhwa and manhua series right now.'], latest: ['Latest Manga Updates', 'Manga with new chapters, newest first.'], az: ['Manga A–Z', 'Every series on MangaGang, alphabetically.'] };
+
+// Same caching as api() (fresh for `ttl`, a week-long stale fallback), for manga data fetched here at the edge.
+async function edge(key, ttl, fn, ctx) {
+  const cache = globalThis.caches?.default;
+  const fresh = new Request(`https://seo-cache.internal/manga/${key}`);
+  const stale = new Request(`https://seo-cache.internal/manga-stale/${key}`);
+  const hit = await cache?.match(fresh);
+  if (hit) return hit.json();
+  try {
+    const data = await fn();
+    const body = JSON.stringify(data);
+    ctx?.waitUntil?.(Promise.all([
+      cache?.put(fresh, new Response(body, { headers: { 'Cache-Control': `public, max-age=${ttl}` } })),
+      cache?.put(stale, new Response(body, { headers: { 'Cache-Control': 'public, max-age=604800' } })),
+    ]));
+    return data;
+  } catch (err) {
+    if (err.status === 404) throw err;
+    const old = await cache?.match(stale);
+    if (old) return old.json();
+    throw err;
+  }
+}
+const mangaSeriesData = (id, ctx) => edge(`series/${id}`, 1800, () => manga.series(id), ctx);
+const mangaList = (list) => `<ul>${list.map((m) => `<li><a href="${mangaPath(m)}">${esc(m.title)}</a>${m.year ? ` (${m.year})` : ''}${m.type ? ` — ${esc(m.type)}` : ''}</li>`).join('')}</ul>`;
+const mangaItemList = (name, list) => ({
+  '@context': 'https://schema.org', '@type': 'ItemList', name,
+  itemListElement: list.map((m, i) => ({ '@type': 'ListItem', position: i + 1, url: SITE + mangaPath(m), name: m.title })),
+});
+const mangaPage = (page) => ({ site: MANGA, image: MANGA_IMAGE, ...page });
+
+async function mangaHome(env, ctx) {
+  const d = await edge('home', 1800, manga.home, ctx);
+  return mangaPage({
+    title: 'MangaGang — Read Manga Online Free', description: MANGA_DESC, canonical: '/manga',
+    jsonld: [
+      { '@context': 'https://schema.org', '@type': 'WebSite', name: MANGA, url: `${SITE}/manga`, isPartOf: { '@type': 'WebSite', name: NAME, url: SITE + '/' }, potentialAction: { '@type': 'SearchAction', target: `${SITE}/manga/browse?q={search_term_string}`, 'query-input': 'required name=search_term_string' } },
+      mangaItemList('Popular manga', d.popular),
+    ],
+    body: `<h1>${MANGA}: read manga online free</h1><p>${esc(MANGA_DESC)}</p>
+<h2>Popular manga</h2>${mangaList(d.popular)}
+<h2>Latest manga updates</h2>${mangaList(d.latest)}
+<p><a href="/manga/browse?sort=popular">All popular manga</a> · <a href="/manga/browse?sort=latest">All latest updates</a> · <a href="/manga/browse?sort=az">Manga A–Z</a> · <a href="/">Watch anime on ${NAME}</a></p>`,
+  });
+}
+
+function mangaFacts(m) {
+  const n = m.chapters.length;
+  return [
+    `${m.title} is ${/^[aeiou]/i.test(m.type || 'manga') ? 'an' : 'a'} ${(m.type || 'manga').toLowerCase()}${m.authors.length ? ` by ${m.authors.join(', ')}` : ''}${m.year ? `, first released in ${m.year}` : ''}.`,
+    m.status ? `It is ${m.status.toLowerCase()}${n ? ` with ${n} chapters to read` : ''}${m.chapters[0]?.date ? `; the latest, ${m.chapters[0].name}, came out on ${date(m.chapters[0].date)}` : ''}.` : '',
+    m.tags.length ? `Genres: ${m.tags.join(', ')}.` : '',
+    m.official ? 'Officially translated in English.' : '',
+    m.anime ? 'It has an anime adaptation.' : '',
+  ].filter(Boolean).join(' ');
+}
+
+async function mangaSeries(id, env, ctx) {
+  const m = await mangaSeriesData(id, ctx);
+  const n = m.chapters.length;
+  const latest = m.chapters[0];
+  const first = m.chapters.at(-1);
+  return mangaPage({
+    title: `Read ${m.title} Manga Online Free | ${MANGA}`,
+    description: clip(`Read ${m.title} online free in English${n ? ` — all ${n} chapters` : ''}${latest ? `, latest ${latest.name}` : ''}. ${m.description}`, 158),
+    canonical: mangaPath(m),
+    image: m.cover_large,
+    ogType: 'book',
+    jsonld: [
+      {
+        '@context': 'https://schema.org', '@type': 'ComicSeries', name: m.title, url: SITE + mangaPath(m), image: m.cover_large,
+        description: clip(m.description, 500), genre: m.tags, inLanguage: 'en',
+        ...(m.authors.length && { author: m.authors.map((name) => ({ '@type': 'Person', name })) }),
+        ...(m.year && { startDate: String(m.year) }),
+        ...(latest?.date && { dateModified: latest.date }),
+      },
+      crumbs([[MANGA, '/manga'], [m.title, mangaPath(m)]]),
+    ],
+    body: `<article><h1>${esc(m.title)}</h1><p>${esc(mangaFacts(m))}</p>
+${m.description ? `<h2>Synopsis</h2><p>${esc(m.description).replace(/\n+/g, '</p><p>')}</p>` : ''}
+${first ? `<p><a href="${mangaRead(m.id, first.id)}">Start reading ${esc(m.title)} from ${esc(first.name)}</a>${latest && latest !== first ? ` · <a href="${mangaRead(m.id, latest.id)}">Read the latest: ${esc(latest.name)}</a>` : ''}</p>` : ''}
+${n ? `<h2>${esc(m.title)} chapters</h2><ul>${m.chapters.slice(0, 200).map((c) => `<li><a href="${mangaRead(m.id, c.id)}">${esc(m.title)} ${esc(c.name)}</a>${c.date ? ` — ${date(c.date)}` : ''}</li>`).join('')}</ul>${n > 200 ? `<p>Plus ${n - 200} earlier chapters.</p>` : ''}` : ''}</article>`,
+  });
+}
+
+async function mangaChapter(sid, cid, env, ctx) {
+  const m = await mangaSeriesData(sid, ctx);
+  const i = m.chapters.findIndex((c) => c.id === cid);
+  if (i < 0) throw Object.assign(new Error('Chapter not found'), { status: 404 });
+  const c = m.chapters[i];
+  const next = m.chapters[i - 1];
+  const prev = m.chapters[i + 1];
+  return mangaPage({
+    title: `${m.title} ${c.name} — Read Online Free | ${MANGA}`,
+    description: `Read ${m.title} ${c.name} online free in English on ${MANGA}.${next ? ` Next: ${next.name}.` : ''}`,
+    canonical: mangaRead(sid, cid),
+    image: m.cover_large,
+    jsonld: [crumbs([[MANGA, '/manga'], [m.title, mangaPath(m)], [c.name, mangaRead(sid, cid)]])],
+    body: `<article><h1>${esc(m.title)} ${esc(c.name)}</h1><p>Read ${esc(m.title)} ${esc(c.name)} online free in English${c.date ? `, released ${date(c.date)}` : ''}.</p>
+<p>${prev ? `<a href="${mangaRead(sid, prev.id)}">Previous: ${esc(prev.name)}</a> · ` : ''}<a href="${mangaPath(m)}">All ${esc(m.title)} chapters</a>${next ? ` · <a href="${mangaRead(sid, next.id)}">Next: ${esc(next.name)}</a>` : ''}</p></article>`,
+  });
+}
+
+async function mangaBrowse(url, env, ctx) {
+  const q = url.searchParams.get('q')?.trim() ?? '';
+  const sort = MANGA_SORTS[url.searchParams.get('sort')] ? url.searchParams.get('sort') : 'popular';
+  if (q) return mangaPage({ title: `${q.slice(0, 60)} — Manga Search | ${MANGA}`, description: `Manga matching “${q.slice(0, 60)}” on ${MANGA}.`, canonical: '/manga/browse', noindex: true, jsonld: [], body: `<h1>Manga search: ${esc(q)}</h1>` });
+  const page = Math.max(1, Math.min(Number(url.searchParams.get('page')) || 1, 200));
+  const d = await edge(`browse/${sort}/${page}`, 1800, () => manga.search({ sort, page }), ctx);
+  const [h, desc] = MANGA_SORTS[sort];
+  const path = `/manga/browse?sort=${sort}${page > 1 ? `&page=${page}` : ''}`;
+  return mangaPage({
+    title: `${h}${page > 1 ? ` — Page ${page}` : ''} | ${MANGA}`, description: `${desc} Read them free on ${MANGA}.`, canonical: path,
+    jsonld: [mangaItemList(h, d.results), crumbs([[MANGA, '/manga'], [h, path]])],
+    body: `<h1>${esc(h)}</h1><p>${esc(desc)}</p>${mangaList(d.results)}${d.has_next ? `<p><a href="/manga/browse?sort=${sort}&amp;page=${page + 1}">Next page</a></p>` : ''}`,
+  });
+}
+
 async function pageFor(url, env, ctx) {
   const p = url.pathname.replace(/\/+$/, '') || '/';
   let m;
@@ -241,7 +369,11 @@ async function pageFor(url, env, ctx) {
   if ((m = p.match(/^\/browse\/([\w-]+)$/))) return browse(m[1], env, ctx);
   if ((m = p.match(/^\/genre\/([\w-]+)$/))) return genre(m[1], env, ctx);
   if ((m = p.match(/^\/season\/(\d{4})\/(\w+)$/))) return season(Number(m[1]), m[2], env, ctx);
-  if (p === '/manga') return { ...staticPage('MangaGang', 'Read manga, manhwa and manhua online free on MangaGang: popular series, the latest chapter updates and a fast long-strip reader.', '/manga'), title: 'MangaGang — Read Manga Online Free' };
+  if (p === '/manga') return mangaHome(env, ctx);
+  if (p === '/manga/browse') return mangaBrowse(url, env, ctx);
+  if (p === '/manga/library') return mangaPage({ ...staticPage('My Manga Library', 'Your MangaGang reading history, saved manga and reading list.', '/manga/library', true), title: `My Manga Library | ${MANGA}` });
+  if ((m = p.match(/^\/manga\/read\/([0-9A-Z]{26})\/([0-9A-Z]{26})$/))) return mangaChapter(m[1], m[2], env, ctx);
+  if ((m = p.match(/^\/manga\/([0-9A-Z]{26})(?:\/[^/]*)?$/))) return mangaSeries(m[1], env, ctx);
   if (p === '/schedule') return staticPage('Anime Airing Schedule', 'This week’s anime release schedule with air times in your timezone and countdowns to every new episode.', '/schedule');
   // Filtered search result pages duplicate genre/season pages: keep them out of the index.
   if (p === '/search') return staticPage('Browse & Search Anime', 'Search thousands of anime by title, genre, format, season, year and status.', '/search', url.search.length > 1);
@@ -255,12 +387,13 @@ const PRERENDER_STYLE = '<style>#prerender{max-width:1100px;margin:0 auto;paddin
 function headTags(page) {
   const url = SITE + page.canonical;
   const image = page.image || DEFAULT_IMAGE;
+  const ogType = page.ogType || (page.canonical.startsWith('/watch/') ? 'video.episode' : page.canonical.startsWith('/anime/') ? 'video.tv_show' : 'website');
   return [
     `<meta name="description" content="${esc(page.description)}">`,
     `<link rel="canonical" href="${esc(url)}">`,
     page.noindex ? '<meta name="robots" content="noindex, follow">' : '<meta name="robots" content="index, follow, max-image-preview:large">',
-    `<meta property="og:site_name" content="${NAME}">`,
-    `<meta property="og:type" content="${page.canonical.startsWith('/watch/') ? 'video.episode' : page.canonical.startsWith('/anime/') ? 'video.tv_show' : 'website'}">`,
+    `<meta property="og:site_name" content="${page.site || NAME}">`,
+    `<meta property="og:type" content="${ogType}">`,
     `<meta property="og:title" content="${esc(page.title)}">`,
     `<meta property="og:description" content="${esc(page.description)}">`,
     `<meta property="og:url" content="${esc(url)}">`,
@@ -295,11 +428,12 @@ function inject(res, page) {
 const xml = (body) => new Response(`<?xml version="1.0" encoding="UTF-8"?>\n${body}`, { headers: { 'Content-Type': 'application/xml; charset=utf-8', 'Cache-Control': 'public, max-age=3600' } });
 const urlset = (urls) => xml(`<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.map((u) => `<url><loc>${esc(SITE + u.loc)}</loc>${u.lastmod ? `<lastmod>${u.lastmod}</lastmod>` : ''}</url>`).join('\n')}\n</urlset>`);
 const ANIME_SITEMAPS = 20; // x 50 most popular each = 1,000 titles
+const MANGA_SITEMAPS = 10; // x 32 most popular each = 320 series
 
 async function sitemap(p, env, ctx) {
   const today = new Date().toISOString().slice(0, 10);
   if (p === '/sitemap.xml') {
-    const files = ['pages', 'episodes', 'seasonal', ...Array.from({ length: ANIME_SITEMAPS }, (_, i) => `anime-${i + 1}`)];
+    const files = ['pages', 'episodes', 'seasonal', ...Array.from({ length: ANIME_SITEMAPS }, (_, i) => `anime-${i + 1}`), 'manga', ...Array.from({ length: MANGA_SITEMAPS }, (_, i) => `manga-${i + 1}`)];
     return xml(`<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${files.map((f) => `<sitemap><loc>${SITE}/sitemap-${f}.xml</loc></sitemap>`).join('\n')}\n</sitemapindex>`);
   }
   if (p === '/sitemap-pages.xml') {
@@ -321,6 +455,19 @@ async function sitemap(p, env, ctx) {
     const seen = new Set();
     return urlset([...a.results, ...b.results].filter((x) => !seen.has(x.id) && seen.add(x.id)).map((x) => ({ loc: animePath(x), lastmod: today })));
   }
+  if (p === '/sitemap-manga.xml') {
+    // MangaGang pages plus the series with the newest chapters.
+    const d = await edge('browse/latest/1', 3600, () => manga.search({ sort: 'latest', page: 1 }), ctx);
+    return urlset([
+      { loc: '/manga', lastmod: today }, ...Object.keys(MANGA_SORTS).map((s) => ({ loc: `/manga/browse?sort=${s}`, lastmod: today })),
+      ...d.results.map((x) => ({ loc: mangaPath(x), lastmod: today })),
+    ]);
+  }
+  const mm = p.match(/^\/sitemap-manga-(\d+)\.xml$/);
+  if (mm && Number(mm[1]) >= 1 && Number(mm[1]) <= MANGA_SITEMAPS) {
+    const d = await edge(`browse/popular/${mm[1]}`, 86400, () => manga.search({ sort: 'popular', page: Number(mm[1]) }), ctx);
+    return urlset(d.results.map((x) => ({ loc: mangaPath(x) })));
+  }
   const m = p.match(/^\/sitemap-anime-(\d+)\.xml$/);
   if (m && Number(m[1]) >= 1 && Number(m[1]) <= ANIME_SITEMAPS) {
     const d = await api(`/list/popular?page=${m[1]}&limit=50`, env, ctx, 86400);
@@ -340,6 +487,8 @@ Disallow: /native$
 Disallow: /embeds/
 Disallow: /party/
 Disallow: /library
+Disallow: /manga/library
+Disallow: /manga/browse?q=
 Disallow: /settings
 Disallow: /reset
 
@@ -364,7 +513,16 @@ AnimeGang is a free anime streaming and discovery site. Anime metadata (titles, 
 ## Genres
 ${GENRES.map((g) => `- [${g} anime](${SITE}/genre/${slugify(g)})`).join('\n')}
 
+## MangaGang (manga)
+MangaGang is AnimeGang's manga section: manga, manhwa and manhua to read online, with chapter lists and a long-strip reader.
+- [MangaGang home](${SITE}/manga): popular series and the latest chapter updates
+- [Popular manga](${SITE}/manga/browse?sort=popular)
+- [Latest manga updates](${SITE}/manga/browse?sort=latest)
+- [Manga A–Z](${SITE}/manga/browse?sort=az)
+
 ## URL patterns
+- Manga series page: ${SITE}/manga/{series-id}/{slug} — synopsis, authors, genres, full chapter list
+- Manga chapter: ${SITE}/manga/read/{series-id}/{chapter-id}
 - Anime page: ${SITE}/anime/{anilist-id}/{slug} — synopsis, episode list, characters, related titles
 - Episode page: ${SITE}/watch/{anilist-id}/{episode-number}
 - Season page: ${SITE}/season/{year}/{winter|spring|summer|fall}
