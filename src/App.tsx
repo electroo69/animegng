@@ -3,6 +3,7 @@ import { Route, Routes, useLocation } from "react-router-dom"
 import { Navbar } from "@/components/Navbar"
 import { Footer } from "@/components/Footer"
 import { ConsentBanner } from "@/components/social/ConsentBanner"
+import { AdblockCard } from "@/components/AdblockCard"
 import { ScrollProgress } from "@/components/ui/scroll-progress"
 import Home from "@/pages/Home"
 
@@ -82,6 +83,7 @@ export default function App() {
       </main>
       <Footer />
       <ConsentBanner />
+      <AdblockCard />
     </div>
   )
 }
