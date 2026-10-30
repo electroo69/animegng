@@ -52,7 +52,7 @@ export const cookie = (name, value, maxAge) =>
   `${name}=${encodeURIComponent(value)}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=${maxAge}`;
 
 // Mutations must come from our own pages (cookies are SameSite=Lax as well).
-const ORIGINS = new Set(['https://animegng.com', 'https://www.animegng.com', 'https://animegng.pages.dev', 'https://animegng.drop-share-free.workers.dev', 'http://localhost:5173', 'http://localhost:5174']);
+export const ORIGINS = new Set(['https://animegng.com', 'https://www.animegng.com', 'https://animegng.pages.dev', 'https://animegng.drop-share-free.workers.dev', 'http://localhost:5173', 'http://localhost:5174']);
 export function checkOrigin(request) {
   if (request.method === 'GET' || request.method === 'HEAD') return;
   const origin = request.headers.get('Origin');

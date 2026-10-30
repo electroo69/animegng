@@ -1,7 +1,7 @@
 // Account & community API, served at /api/u/* (the Pages site proxies these paths to this Worker).
 import { changePassword, confirmEmail, currentUser, emailLink, login, logout, magicVerify, oauthCallback, oauthStart, providers, register, requestEmailVerify, requireUser, resetPassword } from './auth.js';
 import { clientIp, rateLimit, VAPID_PUBLIC } from './extras.js';
-import { body, checkOrigin, clean, fail, HttpError, json, now, privateUser, publicUser, uid } from './util.js';
+import { body, checkOrigin, clean, fail, HttpError, json, now, ORIGINS, privateUser, publicUser, uid } from './util.js';
 
 const int = (v, name) => {
   const n = Number(v);
@@ -391,7 +391,16 @@ on('GET', '/rooms/:id', async (r, env, { user, p }) => {
   return stub.fetch(`https://room/info${url.search}`);
 });
 
-const PUBLIC = new Set(['GET /me/email/verify', 'POST /auth/forgot', 'POST /auth/magic', 'GET /auth/magic/verify', 'POST /auth/reset', 'GET /push/key', 'GET /me', 'GET /auth/providers', 'POST /auth/register', 'POST /auth/login', 'POST /auth/logout', 'GET /auth/:provider', 'GET /auth/:provider/callback', 'GET /anime/:anime/state', 'GET /episodes/:anime/:ep', 'GET /comments', 'GET /live', 'GET /rooms/:id']);
+// Live visitor counts (presence.js). WebSocket upgrades aren't covered by checkOrigin, so check here.
+on('GET', '/presence', async (r, env, { q }) => {
+  if (r.headers.get('Upgrade') !== 'websocket') fail(426, 'WebSocket required');
+  if (!ORIGINS.has(r.headers.get('Origin'))) fail(403, 'Cross-site request blocked');
+  const cid = String(q.get('cid') || '').replace(/[^a-zA-Z0-9-]/g, '').slice(0, 36) || uid();
+  const stub = env.PRESENCE.get(env.PRESENCE.idFromName('site'));
+  return stub.fetch(new Request(`https://presence/ws?cid=${cid}`, { headers: r.headers }));
+});
+
+const PUBLIC = new Set(['GET /presence', 'GET /me/email/verify', 'POST /auth/forgot', 'POST /auth/magic', 'GET /auth/magic/verify', 'POST /auth/reset', 'GET /push/key', 'GET /me', 'GET /auth/providers', 'POST /auth/register', 'POST /auth/login', 'POST /auth/logout', 'GET /auth/:provider', 'GET /auth/:provider/callback', 'GET /anime/:anime/state', 'GET /episodes/:anime/:ep', 'GET /comments', 'GET /live', 'GET /rooms/:id']);
 
 export async function handleSocial(request, env, path) {
   try {

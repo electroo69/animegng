@@ -6,6 +6,7 @@ import { ConsentBanner } from "@/components/social/ConsentBanner"
 import { AdblockCard } from "@/components/AdblockCard"
 import { ScrollProgress } from "@/components/ui/scroll-progress"
 import Home from "@/pages/Home"
+import { setPresencePage } from "@/lib/presence"
 
 // Route-level code splitting: the home page ships in the main bundle, the rest load on demand.
 const NotFound = lazy(() => import("@/pages/NotFound"))
@@ -49,11 +50,22 @@ function MangaTheme() {
   return null
 }
 
+// Tells the live counter which episode this tab is on.
+function PresenceTracker() {
+  const { pathname } = useLocation()
+  useEffect(() => {
+    const m = pathname.match(/^\/watch\/(\d+)(?:\/(\d+))?/)
+    setPresencePage(m ? `${m[1]}:${m[2] || 1}` : "")
+  }, [pathname])
+  return null
+}
+
 export default function App() {
   return (
     <div className="grain relative flex min-h-dvh flex-col overflow-x-clip">
       <ScrollToTop />
       <MangaTheme />
+      <PresenceTracker />
       <ScrollProgress className="top-0 z-[60] h-[2px] bg-gradient-to-r from-brand-red via-brand-red to-brand-blue" />
       <Navbar />
       <main className="flex-1">

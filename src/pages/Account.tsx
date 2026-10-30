@@ -174,6 +174,7 @@ export function Privacy() {
         <li><b>Without an account:</b> watch history, resume points and player settings are stored only in your browser (localStorage).</li>
         <li><b>With an account:</b> your username, display name, a salted password hash (never the password), and optionally an email address you confirm. If you sign in with Google or Discord we store their account ID, name and avatar.</li>
         <li><b>What you do:</b> synced history, playlists, subscriptions, likes, comments and watch-party chat (the last 150 messages per room).</li>
+        <li><b>Live visitor counts:</b> a random ID in your browser lets us count each visitor once. It isn't linked to your account, and we don't save it.</li>
         <li><b>Push notifications:</b> if you turn them on, the push address your browser gives us.</li>
         <li><b>Security:</b> your IP address is used briefly to rate-limit sign-in attempts and is not stored with your account.</li>
       </ul>

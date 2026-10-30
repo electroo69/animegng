@@ -13,11 +13,11 @@
   "d1_databases": [
     { "binding": "DB", "database_name": "animegng", "database_id": "66d59bd9-93e1-4338-bda9-ced3b07ad222", "migrations_dir": "migrations" }
   ],
-  // One Durable Object per watch-party room (WebSockets, hibernation API).
+  // One Durable Object per watch-party room, plus one for the live visitor counts (WebSockets, hibernation API).
   "durable_objects": {
-    "bindings": [{ "name": "ROOMS", "class_name": "PartyRoom" }]
+    "bindings": [{ "name": "ROOMS", "class_name": "PartyRoom" }, { "name": "PRESENCE", "class_name": "Presence" }]
   },
-  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["PartyRoom"] }],
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["PartyRoom"] }, { "tag": "v2", "new_sqlite_classes": ["Presence"] }],
   // Hourly: notify subscribers about newly aired episodes.
   "triggers": { "crons": ["7 * * * *"] },
   // Email goes through Resend (worker/social/extras.js): set the RESEND_API_KEY secret.

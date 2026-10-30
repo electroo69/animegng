@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom"
 import { Logo, MANGA_NAV, NAV, useIsManga } from "@/components/Navbar"
 import { DotPattern } from "@/components/ui/dot-pattern"
+import { LiveCount } from "@/components/LiveCount"
 import { GENRES, genreHref } from "@/lib/seo"
 
 const SEASONS = ["winter", "spring", "summer", "fall"]
@@ -70,6 +71,7 @@ export function Footer() {
         </div>
       </div>
       <div className="relative border-t border-white/[0.06] py-5 text-center text-xs text-white/35">
+        <LiveCount className="mb-2 flex justify-center" />
         © {new Date().getFullYear()} AnimeGang. A fun side project. · <Link to="/privacy" className="hover:text-white">Privacy</Link>
       </div>
     </footer>
