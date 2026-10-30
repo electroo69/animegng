@@ -1,5 +1,5 @@
 // A friendly ask shown to visitors with an ad blocker. It never blocks the site: the close button hides it for a few days.
-// Detection runs well after load, so it can't affect first paint. Two checks, as blockers work in different ways:
+// Detection runs as soon as the app mounts, which is after first paint (main.tsx). Two checks, as blockers work in different ways:
 // a request to the ad host (network filters) and a bait element (cosmetic filters).
 import { useEffect, useState } from "react"
 import { HeartHandshake, X } from "lucide-react"
@@ -7,6 +7,7 @@ import { useLocation } from "react-router-dom"
 
 const KEY = "ag:adblock-later"
 const SNOOZE_MS = 3 * 24 * 60 * 60 * 1000
+const TIMEOUT_MS = 2000
 const AD_URL = "https://bauval.org/22/549146a95ff974479313fc83e8837165"
 
 const snoozed = () => {
@@ -18,21 +19,20 @@ const snoozed = () => {
 }
 
 async function adsBlocked() {
+  // Started first so a bait hit answers at once. Some blockers leave the request hanging instead of failing it,
+  // so a slow answer counts as blocked. Being offline fails the same way, and isn't an ad blocker.
+  const request = fetch(AD_URL, { method: "HEAD", mode: "no-cors", cache: "no-store", credentials: "omit", referrerPolicy: "no-referrer", signal: AbortSignal.timeout?.(TIMEOUT_MS) }).then(
+    () => false,
+    () => navigator.onLine,
+  )
   const bait = document.createElement("div")
   bait.className = "adsbox ad-banner pub_300x250 text-ad"
   bait.style.cssText = "position:absolute;left:-9999px;width:1px;height:1px"
   document.body.append(bait)
-  await new Promise((r) => setTimeout(r, 150))
+  await new Promise((r) => setTimeout(r, 100))
   const hidden = bait.offsetHeight === 0
   bait.remove()
-  if (hidden) return true
-  try {
-    await fetch(AD_URL, { method: "HEAD", mode: "no-cors", cache: "no-store", credentials: "omit", referrerPolicy: "no-referrer" })
-    return false
-  } catch {
-    // Being offline fails the same way, and isn't an ad blocker.
-    return navigator.onLine
-  }
+  return hidden || request
 }
 
 export function AdblockCard() {
@@ -42,14 +42,11 @@ export function AdblockCard() {
   useEffect(() => {
     if (snoozed()) return
     let live = true
-    const t = setTimeout(() => {
-      adsBlocked().then((blocked) => {
-        if (live && blocked) setOpen(true)
-      })
-    }, 3000)
+    adsBlocked().then((blocked) => {
+      if (live && blocked) setOpen(true)
+    })
     return () => {
       live = false
-      clearTimeout(t)
     }
   }, [])
 
