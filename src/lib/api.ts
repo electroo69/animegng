@@ -248,8 +248,19 @@ export const useSchedule = (week = 0) =>
     placeholderData: keepPreviousData,
   })
 
+// Third-party embeds addressed by id + episode, listed after the API's servers as fallbacks. VHD-1 takes
+// the MAL id, so it's skipped for anime without a MAL mapping.
+export function fallbackServers(id: number, malId: number | null | undefined, ep: number, lang: "sub" | "dub"): Server[] {
+  const urls: [number, string | null][] = [
+    [1, malId ? `https://babastream.top/embed/${malId}/${ep}/${lang}` : null],
+    [3, `https://aniembed.se/e/${id}/${ep}?lang=${lang}`],
+  ]
+  return urls.flatMap(([n, url]) => (url ? [{ id: `vhd${n}-${lang}`, name: `VHD-${n}`, embed_url: url, softsub: false }] : []))
+}
+
 // Builds the player iframe URL from a server's embed_url (same params the API's /embed route adds).
 export function embedSrc(server: Server, o: { dub: boolean; autoplay: boolean; skipIntro: boolean; skipOutro: boolean; startAt?: number }) {
+  if (server.name.startsWith("VHD-")) return server.embed_url
   const u = new URL(server.embed_url)
   if (server.name === "HD-3") u.searchParams.set("autostart", String(o.autoplay))
   else {

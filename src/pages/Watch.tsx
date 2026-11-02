@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react"
 import { animeHref, clip, SITE_NAME, useHead } from "@/lib/seo"
 import { LeaderboardAd } from "@/components/AdSlot"
 import { Link, useNavigate, useParams } from "react-router-dom"
-import { AlertTriangle, Captions, ChevronLeft, ChevronRight, Clock, Lightbulb, Loader2, Mic, Search, Server as ServerIcon, Star, Users } from "lucide-react"
+import { AlertTriangle, Captions, ChevronLeft, ChevronRight, Clock, Lightbulb, Loader2, Mic, Search, Star, Users } from "lucide-react"
 import { AnimeCard } from "@/components/AnimeCard"
 import { Container, Rail, Section, SectionHeader } from "@/components/Section"
 import { BorderBeam } from "@/components/ui/border-beam"
@@ -13,7 +13,7 @@ import { AmbientGlow } from "@/components/AmbientGlow"
 import { useRequireAuth } from "@/components/social/AuthDialog"
 import { Comments, EpisodeVotes } from "@/components/social/Comments"
 import { sapi, storedAnime, type StoredAnime } from "@/lib/social"
-import { embedSrc, useAnime, useEpisodes, useWatch, type Episode, type Server } from "@/lib/api"
+import { embedSrc, fallbackServers, useAnime, useEpisodes, useWatch, type Episode, type Server } from "@/lib/api"
 import { useDirectStream, usePrefetchDirect } from "@/lib/direct"
 import { cap, countdown, formatLabel, score, statusLabel, stripHtml, titleOf } from "@/lib/format"
 import { loadPrefs, recordWatch, resumeTime, saveTime, savePrefs, type PlayerPrefs } from "@/lib/progress"
@@ -73,9 +73,13 @@ export default function Watch() {
   const directLoading = directSub.isLoading || directDub.isLoading
 
   const servers = fresh?.servers
+  // Held back until the API has answered, so they don't start playing ahead of its servers, and for unaired episodes.
+  const unaired = (anime.data?.next_airing_episode?.episode ?? Infinity) <= ep
+  const fallbacks = (l: "sub" | "dub") => ((fresh || error) && anime.data && !unaired ? fallbackServers(id, anime.data.mal_id, ep, l) : [])
   const withDirect = (l: "sub" | "dub"): Server[] => [
     ...(direct[l] && directFailed !== l ? [{ id: `direct-${l}`, name: "Direct", embed_url: "", softsub: true }] : []),
     ...(servers?.[l] ?? []),
+    ...fallbacks(l),
   ]
   const rows = { sub: withDirect("sub"), dub: withDirect("dub") }
   const lang = prefs.lang === "dub" && rows.dub.length ? "dub" : "sub"
@@ -272,20 +276,19 @@ export default function Watch() {
             </div>
 
             {/* Servers */}
-            <div className="mt-3 grid gap-4 overflow-hidden rounded-2xl border border-white/[0.07] bg-gradient-to-br from-white/[0.03] to-transparent p-4 sm:grid-cols-[220px_1fr] sm:p-5">
-              <div className="rounded-xl bg-primary/10 p-4 text-center sm:text-left">
-                <p className="text-xs text-white/50">You are watching</p>
-                <p className="mt-0.5 font-bold text-primary">Episode {ep}</p>
+            <div className="mt-3 space-y-2 rounded-2xl border border-white/[0.07] bg-gradient-to-br from-white/[0.03] to-transparent p-3">
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                <p className="text-sm font-bold text-primary">Episode {ep}</p>
                 {watching > 0 && (
-                  <p className="mt-1.5 flex items-center justify-center gap-1.5 text-xs font-medium text-white/70 tabular-nums sm:justify-start">
+                  <p className="flex items-center gap-1.5 text-xs font-medium text-white/70 tabular-nums">
                     <LiveDot />
                     {watching.toLocaleString()} watching now
                   </p>
                 )}
-                <LiveCount className="mt-1 flex justify-center sm:justify-start" />
-                <p className="mt-2 text-[11px] leading-relaxed text-white/45">If the current server doesn't load, try another one.</p>
+                <LiveCount className="flex" />
+                <p className="text-[11px] text-white/40 sm:ml-auto">Not loading? Try another server.</p>
               </div>
-              <div className="space-y-3">
+              <div className="space-y-1.5">
                 <ServerRow icon={Captions} label="SUB" servers={rows.sub} active={lang === "sub" ? server?.name : undefined} onPick={(s) => update({ lang: "sub", server: s.name })} loading={!rows.sub.length && (directLoading || isLoading)} />
                 <ServerRow icon={Mic} label="DUB" servers={rows.dub} active={lang === "dub" ? server?.name : undefined} onPick={(s) => update({ lang: "dub", server: s.name })} loading={!rows.dub.length && (directLoading || isLoading)} />
               </div>
@@ -381,25 +384,25 @@ function NavBtn({ disabled, onClick, onHover, primary, children }: { disabled: b
 
 function ServerRow({ icon: Icon, label, servers, active, onPick, loading }: { icon: React.ComponentType<{ className?: string }>; label: string; servers: Server[]; active?: string; onPick: (s: Server) => void; loading: boolean }) {
   return (
-    <div className="flex flex-wrap items-center gap-2">
-      <span className="flex w-16 items-center gap-1.5 text-xs font-bold text-white/50">
-        <Icon className="size-4" />
+    <div className="flex flex-wrap items-center gap-1.5">
+      <span className="flex w-12 items-center gap-1 text-[11px] font-bold text-white/50">
+        <Icon className="size-3.5" />
         {label}
       </span>
       {loading ? (
         <span className="h-8 w-40 animate-pulse rounded-lg bg-white/[0.05]" />
       ) : servers.length ? (
-        servers.map((s) => (
+        // Shown by position; s.name stays the internal key (saved prefs, which player to use).
+        servers.map((s, i) => (
           <button
             key={s.id}
             onClick={() => onPick(s)}
             className={cn(
-              "flex h-8 items-center gap-1.5 rounded-lg border px-3.5 text-xs font-semibold transition",
+              "h-7 rounded-md border px-2.5 text-[11px] font-semibold transition",
               active === s.name ? "border-primary bg-primary text-white" : "border-white/10 bg-white/[0.03] text-white/70 hover:border-white/25 hover:text-white",
             )}
           >
-            <ServerIcon className="size-3" />
-            {s.name}
+            {label === "DUB" ? "AG-DUB" : "AG"}-{i + 1}
           </button>
         ))
       ) : (
