@@ -252,6 +252,7 @@ export const useSchedule = (week = 0) =>
 // the MAL id, so it's skipped for anime without a MAL mapping.
 export function fallbackServers(id: number, malId: number | null | undefined, ep: number, lang: "sub" | "dub"): Server[] {
   const urls: [number, string | null][] = [
+    [7, `https://zokoanime.video/stream/ani/${id}/${ep}/${lang}`],
     [1, malId ? `https://babastream.top/embed/${malId}/${ep}/${lang}` : null],
     [3, `https://aniembed.se/e/${id}/${ep}?lang=${lang}`],
   ]
