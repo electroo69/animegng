@@ -8,7 +8,7 @@ import { useLocation } from "react-router-dom"
 const KEY = "ag:adblock-later"
 const SNOOZE_MS = 3 * 24 * 60 * 60 * 1000
 const TIMEOUT_MS = 2000
-const AD_URL = "https://bauval.org/22/549146a95ff974479313fc83e8837165"
+const AD_URL = "https://bauval.org/22/9ebbacfc3c5f977a3851e4cc47be8646"
 
 const snoozed = () => {
   try {

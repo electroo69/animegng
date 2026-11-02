@@ -19,6 +19,8 @@ import { cap, countdown, formatLabel, score, statusLabel, stripHtml, titleOf } f
 import { loadPrefs, recordWatch, resumeTime, saveTime, savePrefs, type PlayerPrefs } from "@/lib/progress"
 import { cn } from "@/lib/utils"
 
+const SERVER_TIMEOUT_MS = 12_000
+
 export default function Watch() {
   const params = useParams()
   const id = Number(params.id)
@@ -66,8 +68,14 @@ export default function Watch() {
   const directSub = useDirectStream(id, ep, "sub")
   const directDub = useDirectStream(id, ep, "dub")
   const [directFailed, setDirectFailed] = useState<string | null>(null)
+  // Servers that took too long on this episode, and the attempt that has loaded (see the switching effect below).
+  const [slowServers, setSlowServers] = useState<string[]>([])
+  const [loadedAttempt, setLoadedAttempt] = useState("")
+  const pickedServer = useRef(false)
   useEffect(() => {
     setDirectFailed(null)
+    setSlowServers([])
+    pickedServer.current = false
   }, [id, ep])
   const direct = { sub: directSub.data ?? null, dub: directDub.data ?? null }
   const directLoading = directSub.isLoading || directDub.isLoading
@@ -84,11 +92,34 @@ export default function Watch() {
   const rows = { sub: withDirect("sub"), dub: withDirect("dub") }
   const lang = prefs.lang === "dub" && rows.dub.length ? "dub" : "sub"
   const list = rows[lang]
-  const server = list.find((s) => s.name === prefs.server) ?? list[0]
+  const usable = (s: Server) => !slowServers.includes(s.name)
+  const server = list.find((s) => s.name === prefs.server && usable(s)) ?? list.find(usable) ?? list[0]
   const directStream = server?.name === "Direct" ? direct[lang] : null
   // Wait for the direct lookup before falling back to an embed, so the iframe doesn't flash first.
   // Only the preferred language's lookup gates playback; the other one can finish later.
-  const deciding = prefs.server === "Direct" && (prefs.lang === "dub" ? directDub.isLoading : directSub.isLoading)
+  const deciding = prefs.server === "Direct" && !slowServers.includes("Direct") && (prefs.lang === "dub" ? directDub.isLoading : directSub.isLoading)
+
+  // On the first view of an episode, move to the next server if this one is taking too long, until the visitor
+  // picks one themselves. Embeds are cross-origin, so for those "loaded" only means the iframe page loaded.
+  const attempt = deciding ? "Direct" : server?.name
+  const attemptKey = `${id}:${ep}:${lang}:${attempt}`
+  const others = list.map((s) => s.name).filter((n) => n !== attempt && !slowServers.includes(n)).join()
+  useEffect(() => {
+    if (!attempt || !others || pickedServer.current || loadedAttempt === attemptKey) return
+    const t = setTimeout(() => setSlowServers((s) => [...s, attempt]), SERVER_TIMEOUT_MS)
+    return () => clearTimeout(t)
+  }, [attempt, attemptKey, others, loadedAttempt])
+  useEffect(() => {
+    if (!videoEl || !directStream) return
+    const loaded = () => setLoadedAttempt(attemptKey)
+    videoEl.addEventListener("loadeddata", loaded)
+    return () => videoEl.removeEventListener("loadeddata", loaded)
+  }, [videoEl, directStream, attemptKey])
+  const pickServer = (l: "sub" | "dub", s: Server) => {
+    pickedServer.current = true
+    setSlowServers([])
+    update({ lang: l, server: s.name })
+  }
 
   // Start position is captured once per episode so progress ticks don't reload the player.
   const startAt = useMemo(() => resumeTime(id, ep), [id, ep])
@@ -213,6 +244,7 @@ export default function Watch() {
                   key={src}
                   ref={frameRef}
                   src={src}
+                  onLoad={() => setLoadedAttempt(attemptKey)}
                   className="absolute inset-0 size-full"
                   allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
                   allowFullScreen
@@ -289,8 +321,8 @@ export default function Watch() {
                 <p className="text-[11px] text-white/40 sm:ml-auto">Not loading? Try another server.</p>
               </div>
               <div className="space-y-1.5">
-                <ServerRow icon={Captions} label="SUB" servers={rows.sub} active={lang === "sub" ? server?.name : undefined} onPick={(s) => update({ lang: "sub", server: s.name })} loading={!rows.sub.length && (directLoading || isLoading)} />
-                <ServerRow icon={Mic} label="DUB" servers={rows.dub} active={lang === "dub" ? server?.name : undefined} onPick={(s) => update({ lang: "dub", server: s.name })} loading={!rows.dub.length && (directLoading || isLoading)} />
+                <ServerRow icon={Captions} label="SUB" servers={rows.sub} active={lang === "sub" ? server?.name : undefined} onPick={(s) => pickServer("sub", s)} loading={!rows.sub.length && (directLoading || isLoading)} />
+                <ServerRow icon={Mic} label="DUB" servers={rows.dub} active={lang === "dub" ? server?.name : undefined} onPick={(s) => pickServer("dub", s)} loading={!rows.dub.length && (directLoading || isLoading)} />
               </div>
             </div>
 

@@ -13,9 +13,9 @@ import { useEffect, useRef, useState } from "react"
 import { cn } from "@/lib/utils"
 
 const UNITS = {
-  "728x90": { key: "549146a95ff974479313fc83e8837165", w: 728, h: 90 },
-  "320x50": { key: "c1933f36287324f87f8917a9376aaafc", w: 320, h: 50 },
-  "300x250": { key: "11db9680081c2e59af84aae096a3d32b", w: 300, h: 250 },
+  "728x90": { key: "9ebbacfc3c5f977a3851e4cc47be8646", w: 728, h: 90 },
+  "320x50": { key: "5a5915d33036ba0f2e0090007efa224d", w: 320, h: 50 },
+  "300x250": { key: "c70fbb0dbd937607126f834d009a108e", w: 300, h: 250 },
   "468x60": { key: "ed0de7a4bcb36d96f282ef9ca4b9f1ce", w: 468, h: 60 },
   "160x600": { key: "a41ce23f0571af075fca48e54a339202", w: 160, h: 600 },
   "160x300": { key: "c56e115f3c10d8da72a1e37954006090", w: 160, h: 300 },
@@ -75,7 +75,7 @@ export function LeaderboardAd({ className }: { className?: string }) {
   )
 }
 
-const NATIVE_KEY = "c29eedb2f49730f7595851c39d51314d" // NativeBanner_1, 1:1 layout
+const NATIVE_KEY = "092ff557cd6572e90484eab13ffff6d3" // NativeBanner_1, 1:1 layout
 
 // A native ad laid out as one card in a content grid. It loads lazily like the banners and
 // sizes itself to the ad's height, which native.html reports via postMessage.
