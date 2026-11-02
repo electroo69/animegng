@@ -7,13 +7,11 @@ import { AnimeCard } from "@/components/AnimeCard"
 import { Container, Rail, Section, SectionHeader } from "@/components/Section"
 import { BorderBeam } from "@/components/ui/border-beam"
 import { VideoPlayer } from "@/components/VideoPlayer"
-import { LiveCount, LiveDot } from "@/components/LiveCount"
-import { usePresence } from "@/lib/presence"
 import { AmbientGlow } from "@/components/AmbientGlow"
 import { useRequireAuth } from "@/components/social/AuthDialog"
 import { Comments, EpisodeVotes } from "@/components/social/Comments"
 import { sapi, storedAnime, type StoredAnime } from "@/lib/social"
-import { embedSrc, fallbackServers, useAnime, useEpisodes, useWatch, type Episode, type Server } from "@/lib/api"
+import { embedSrc, fallbackServers, useAnime, useMissingEmbeds, useEpisodes, useWatch, type Episode, type Server } from "@/lib/api"
 import { useDirectStream, usePrefetchDirect } from "@/lib/direct"
 import { cap, countdown, formatLabel, score, statusLabel, stripHtml, titleOf } from "@/lib/format"
 import { loadPrefs, recordWatch, resumeTime, saveTime, savePrefs, type PlayerPrefs } from "@/lib/progress"
@@ -51,7 +49,6 @@ export default function Watch() {
     }, "Sign in to host a watch party.")
   const prefetch = usePrefetchDirect()
   const prefetchedNext = useRef(0)
-  const watching = usePresence().e[ep] ?? 0
 
   const update = (p: Partial<PlayerPrefs>) =>
     setPrefs((cur) => {
@@ -83,7 +80,9 @@ export default function Watch() {
   const servers = fresh?.servers
   // Held back until the API has answered, so they don't start playing ahead of its servers, and for unaired episodes.
   const unaired = (anime.data?.next_airing_episode?.episode ?? Infinity) <= ep
-  const fallbacks = (l: "sub" | "dub") => ((fresh || error) && anime.data && !unaired ? fallbackServers(id, anime.data.mal_id, ep, l) : [])
+  const missing = useMissingEmbeds(id, ep)
+  const fallbacks = (l: "sub" | "dub") =>
+    (fresh || error) && anime.data && !unaired && missing.isFetched ? fallbackServers(id, anime.data.mal_id, ep, l).filter((s) => !missing.data?.[l].includes(s.name)) : []
   const withDirect = (l: "sub" | "dub"): Server[] => [
     ...(direct[l] && directFailed !== l ? [{ id: `direct-${l}`, name: "Direct", embed_url: "", softsub: true }] : []),
     ...(servers?.[l] ?? []),
@@ -311,13 +310,6 @@ export default function Watch() {
             <div className="mt-3 space-y-2 rounded-2xl border border-white/[0.07] bg-gradient-to-br from-white/[0.03] to-transparent p-3">
               <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
                 <p className="text-sm font-bold text-primary">Episode {ep}</p>
-                {watching > 0 && (
-                  <p className="flex items-center gap-1.5 text-xs font-medium text-white/70 tabular-nums">
-                    <LiveDot />
-                    {watching.toLocaleString()} watching now
-                  </p>
-                )}
-                <LiveCount className="flex" />
                 <p className="text-[11px] text-white/40 sm:ml-auto">Not loading? Try another server.</p>
               </div>
               <div className="space-y-1.5">
@@ -448,7 +440,6 @@ const CHUNK = 100
 
 function EpisodePanel({ animeId, current, episodes, total, loading, onHover }: { animeId: number; current: number; episodes: Episode[]; total: number; loading: boolean; onHover: (ep: number) => void }) {
   const [q, setQ] = useState("")
-  const viewers = usePresence().e
   const [range, setRange] = useState(() => Math.floor((current - 1) / CHUNK))
   const activeRef = useRef<HTMLAnchorElement>(null)
   const listRef = useRef<HTMLDivElement>(null)
@@ -508,12 +499,11 @@ function EpisodePanel({ animeId, current, episodes, total, loading, onHover }: {
                 onFocus={() => onHover(e.episode_number)}
                 title={e.title ?? undefined}
                 className={cn(
-                  "relative grid h-10 place-items-center rounded-lg font-mono text-sm font-medium transition",
+                  "grid h-10 place-items-center rounded-lg font-mono text-sm font-medium transition",
                   e.episode_number === current ? "bg-primary text-white" : e.is_filler ? "bg-amber-500/10 text-amber-200/80 hover:bg-amber-500/20" : "bg-white/[0.04] text-white/70 hover:bg-white/10 hover:text-white",
                 )}
               >
                 {e.episode_number}
-                {viewers[e.episode_number] > 0 && <span title={`${viewers[e.episode_number]} watching now`} className="absolute top-0.5 right-1 text-[9px] leading-none font-semibold text-emerald-300">{viewers[e.episode_number]}</span>}
               </Link>
             ))}
           </div>
@@ -536,7 +526,6 @@ function EpisodePanel({ animeId, current, episodes, total, loading, onHover }: {
                 <div className="min-w-0 flex-1">
                   <p className={cn("line-clamp-2 text-[13px] leading-snug", on ? "font-semibold text-white" : "text-white/75 group-hover:text-white")}>{e.title || `Episode ${e.episode_number}`}</p>
                   {e.is_filler && <span className="mt-1 inline-block rounded bg-amber-500/90 px-1 text-[9px] font-bold text-black">FILLER</span>}
-                  {viewers[e.episode_number] > 0 && <p className="mt-1 text-[11px] font-medium text-emerald-300 tabular-nums">{viewers[e.episode_number]} watching</p>}
                 </div>
               </Link>
             )

@@ -259,6 +259,15 @@ export function fallbackServers(id: number, malId: number | null | undefined, ep
   return urls.flatMap(([n, url]) => (url ? [{ id: `vhd${n}-${lang}`, name: `VHD-${n}`, embed_url: url, softsub: false }] : []))
 }
 
+// Embed servers that don't have this episode (worker/embed-missing.js). A failed check hides nothing.
+export const useMissingEmbeds = (id: number, ep: number) =>
+  useQuery({
+    queryKey: ["embed-missing", id, ep],
+    queryFn: () => fetch(`/api/embed-missing/${id}/${ep}`).then((r) => (r.ok ? (r.json() as Promise<{ sub: string[]; dub: string[] }>) : { sub: [], dub: [] })),
+    staleTime: 60 * 60_000,
+    retry: false,
+  })
+
 // Builds the player iframe URL from a server's embed_url (same params the API's /embed route adds).
 export function embedSrc(server: Server, o: { dub: boolean; autoplay: boolean; skipIntro: boolean; skipOutro: boolean; startAt?: number }) {
   if (server.name.startsWith("VHD-")) return server.embed_url

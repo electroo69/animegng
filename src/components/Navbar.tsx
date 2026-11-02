@@ -1,7 +1,6 @@
 import { lazy, Suspense, useEffect, useState } from "react"
 import { flushSync } from "react-dom"
 import { UserMenu } from "@/components/social/UserMenu"
-import { LiveCount } from "@/components/LiveCount"
 import { Link, NavLink, useLocation, useNavigate } from "react-router-dom"
 import { BookOpen, CalendarDays, Library, Clock, Compass, Flame, Home, Menu, Search, Sparkles, Trophy, Tv } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -151,7 +150,6 @@ export function Navbar() {
                   </NavLink>
                 ))}
               </nav>
-              <LiveCount className="mt-4 flex px-3" />
             </SheetContent>
           </Sheet>
 
@@ -184,7 +182,6 @@ export function Navbar() {
               Ctrl K
             </kbd>
           </button>
-          <LiveCount className="hidden xl:flex" />
           <UserMenu />
         </div>
       </header>

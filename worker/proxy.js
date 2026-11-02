@@ -1,5 +1,6 @@
 import { storedServers, directWatch } from './direct-embeds.js';
 import { handle } from './app.js';
+import { missingEmbeds } from './embed-missing.js';
 
 // Only the public read-only anime API is forwarded to the configured backend.
 export async function proxyApi(request, env, ctx) {
@@ -19,6 +20,12 @@ export async function proxyApi(request, env, ctx) {
     if (hit) return hit;
   }
   try {
+    const check = incoming.pathname.match(/^\/api\/embed-missing\/(\d+)\/(\d+)\/?$/);
+    if (check) {
+      const response = Response.json(await missingEmbeds(check[1], check[2]), { headers: { 'Cache-Control': 'public, max-age=3600' } });
+      if (request.method === 'GET' && cache) ctx.waitUntil(cache.put(key, response.clone()));
+      return response;
+    }
     const match = incoming.pathname.match(/^\/api\/(watch|servers)\/(\d+)\/(\d+)\/?$/);
     const mapped = request.method === 'GET' && match ? await storedServers(match[2], match[3], incoming.origin) : null;
     if (mapped) {

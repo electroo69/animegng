@@ -7,7 +7,6 @@ import { handleSocial } from './social/api.js';
 import { notifyNewEpisodes } from './social/cron.js';
 
 export { PartyRoom } from './social/room.js';
-export { Presence } from './social/presence.js';
 
 export default {
   async fetch(request, env, ctx) {
