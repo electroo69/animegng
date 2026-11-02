@@ -1,0 +1,5 @@
+{
+  "version": 1,
+  "include": ["/*"],
+  "exclude": ["/ad", "/ad.html", "/native", "/native.html", "/embeds/*", "/favicon.png", "/logo.png", "/logo-nav.webp", "/mangagang-logo.webp", "/sw.js"]
+}

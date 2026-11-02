@@ -34,7 +34,8 @@ function AuthDialog({ open, reason, onOpenChange }: { open: boolean; reason?: st
   const [regEmail, setRegEmail] = useState("")
   const [password, setPassword] = useState("")
   const { login, register } = useAuthActions()
-  const providers = useProviders()
+  // Only when opened: this dialog is mounted on every page.
+  const providers = useProviders(open)
   const action = mode === "register" ? register : login
   const sendLink = async (e: React.FormEvent) => {
     e.preventDefault()

@@ -58,8 +58,8 @@ export const storedAnime = (a: StoredAnime): StoredAnime => ({
 export const useMe = () =>
   useQuery({ queryKey: ["me"], queryFn: () => sapi<{ user: User | null }>("/me").then((d) => d.user), staleTime: 5 * 60_000, retry: false })
 
-export const useProviders = () =>
-  useQuery({ queryKey: ["providers"], queryFn: () => sapi<{ google: boolean; discord: boolean; email: boolean }>("/auth/providers"), staleTime: Infinity })
+export const useProviders = (enabled = true) =>
+  useQuery({ queryKey: ["providers"], queryFn: () => sapi<{ google: boolean; discord: boolean; email: boolean }>("/auth/providers"), staleTime: Infinity, enabled })
 
 export function useAuthActions() {
   const qc = useQueryClient()

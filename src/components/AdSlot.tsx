@@ -51,7 +51,7 @@ export function AdSlot({ size, className }: { size: AdSize; className?: string }
         {show && (
           <iframe
             title="Advertisement"
-            src={`/ad.html?k=${key}&w=${w}&h=${h}`}
+            src={`/ad?k=${key}&w=${w}&h=${h}`}
             width={w}
             height={h}
             loading="lazy"
@@ -120,7 +120,7 @@ export function NativeAdTile({ className }: { className?: string }) {
           <iframe
             ref={frame}
             title="Sponsored"
-            src={`/native.html?k=${NATIVE_KEY}`}
+            src={`/native?k=${NATIVE_KEY}`}
             loading="lazy"
             scrolling="no"
             sandbox="allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox"

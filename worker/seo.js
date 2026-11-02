@@ -476,7 +476,19 @@ async function sitemap(p, env, ctx) {
   return null;
 }
 
-const ROBOTS = `# AnimeGang — all crawlers, including AI search and assistant crawlers, are welcome.
+const ROBOTS = `# AnimeGang — search engines and AI search and assistant crawlers are welcome. SEO tool crawlers aren't:
+# they render every page and use up the daily request allowance.
+User-agent: AhrefsBot
+User-agent: AhrefsSiteAudit
+User-agent: SemrushBot
+User-agent: SiteAuditBot
+User-agent: MJ12bot
+User-agent: DotBot
+User-agent: DataForSeoBot
+User-agent: BLEXBot
+User-agent: PetalBot
+Disallow: /
+
 User-agent: *
 Allow: /
 Disallow: /api/u/

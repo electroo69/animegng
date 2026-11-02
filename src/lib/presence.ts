@@ -49,8 +49,11 @@ function connect() {
 }
 
 let started = false
+// Crawlers that run JavaScript would inflate the count and use up the request allowance.
+const BOT = /bot|crawl|spider|slurp|lighthouse|headless/i
 // page: "anime:episode" while watching, "" anywhere else.
 export function setPresencePage(next: string) {
+  if (BOT.test(navigator.userAgent)) return
   if (next !== page) counts = { ...counts, e: {} }
   page = next
   if (!started) {
