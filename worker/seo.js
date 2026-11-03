@@ -167,12 +167,21 @@ async function watch(id, ep, env, ctx) {
   if (!e && ep > total) return null;
   const epTitle = e?.title && !/^Episode \d+$/.test(e.title) ? e.title : '';
   const desc = strip(e?.description) || clip(strip(a.description), 300);
+  // Google finds the player on watch pages; without this it has no thumbnail or upload date for it.
+  const thumb = e?.thumbnail || a.banner_image || a.cover_image?.extra_large;
+  const uploaded = (e?.aired || a.start_date || '').slice(0, 10);
+  const video = thumb && uploaded && {
+    '@context': 'https://schema.org', '@type': 'VideoObject', name: `${t} Episode ${ep}${epTitle ? ` — ${epTitle}` : ''}`,
+    description: clip(desc || `Watch ${t} episode ${ep} with English sub and dub.`, 500), thumbnailUrl: [thumb], uploadDate: uploaded,
+    ...(e?.duration && { duration: `PT${e.duration}M` }), url: `${SITE}/watch/${id}/${ep}`,
+  };
   return {
     title: `${t} Episode ${ep}${epTitle ? ` — ${epTitle}` : ''} | Watch Free | ${NAME}`,
     description: clip(`Watch ${t} episode ${ep}${epTitle ? ` "${epTitle}"` : ''} online free in HD with English sub and dub. ${desc}`, 158),
     canonical: `/watch/${id}/${ep}`,
-    image: e?.thumbnail || a.banner_image || a.cover_image?.extra_large,
+    image: thumb,
     jsonld: [
+      ...(video ? [video] : []),
       {
         '@context': 'https://schema.org', '@type': 'TVEpisode', name: epTitle || `Episode ${ep}`, episodeNumber: ep,
         url: `${SITE}/watch/${id}/${ep}`, ...(e?.aired && { datePublished: e.aired.slice(0, 10) }), ...(desc && { description: clip(desc, 500) }),
