@@ -1,7 +1,6 @@
 import { useMemo, useState } from "react"
 import { Link, useParams } from "react-router-dom"
 import { ArrowDownUp, BadgeCheck, Bookmark, BookOpen, ListPlus, Search, Tv } from "lucide-react"
-import { LeaderboardAd } from "@/components/AdSlot"
 import { Container } from "@/components/Section"
 import { mangaHref, readHref, toggleShelf, useMangaProgress, useMangaSeries, useMangaShelves, type MangaShelf, type StoredManga } from "@/lib/manga"
 import { clip, useHead } from "@/lib/seo"
@@ -111,7 +110,6 @@ export default function MangaDetail() {
       </section>
 
       <Container className="mt-4">
-        <LeaderboardAd className="mb-10" />
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h2 className="text-xl font-bold tracking-tight text-white">Chapters</h2>
           <div className="flex items-center gap-2">

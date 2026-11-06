@@ -4,7 +4,6 @@
 import { Link, useParams } from "react-router-dom"
 import { useInfiniteQuery } from "@tanstack/react-query"
 import { Loader2 } from "lucide-react"
-import { LeaderboardAd, withNativeAds } from "@/components/AdSlot"
 import { AnimeCard, CardSkeleton } from "@/components/AnimeCard"
 import { Container, Rail, Section, SectionHeader } from "@/components/Section"
 import { BlurFade } from "@/components/ui/blur-fade"
@@ -28,9 +27,8 @@ function Grid({ params, title }: { params: Record<string, string>; title: string
     <section className="mt-14">
       <SectionHeader title={title} />
       <div className="grid grid-cols-2 gap-x-4 gap-y-7 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7">
-        {q.isLoading ? Array.from({ length: 18 }, (_, n) => <CardSkeleton key={n} />) : withNativeAds(items.map((a) => <AnimeCard key={a.id} anime={a} />))}
+        {q.isLoading ? Array.from({ length: 18 }, (_, n) => <CardSkeleton key={n} />) : items.map((a) => <AnimeCard key={a.id} anime={a} />)}
       </div>
-      <LeaderboardAd className="mt-12" />
       {q.hasNextPage && (
         <div className="mt-10 flex justify-center">
           <button onClick={() => q.fetchNextPage()} disabled={q.isFetchingNextPage} className="flex h-11 items-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-8 text-sm font-semibold transition hover:border-primary/50 hover:bg-primary/10">

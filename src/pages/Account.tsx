@@ -178,7 +178,7 @@ export function Privacy() {
         <li><b>Security:</b> your IP address is used briefly to rate-limit sign-in attempts and is not stored with your account.</li>
       </ul>
       <h2 className={h}>Cookies and analytics</h2>
-      <p className="mt-2">We use one essential cookie to keep you signed in. Google Analytics measures visits only if you accept analytics cookies in the banner. Ads are served by Adsterra in isolated frames; Adsterra may set its own cookies, governed by its privacy policy.</p>
+      <p className="mt-2">We use one essential cookie to keep you signed in. Google Analytics measures visits only if you accept analytics cookies in the banner.</p>
       <h2 className={h}>Video and data sources</h2>
       <p className="mt-2">Anime information comes from AniList and ani.zip. Videos are streamed from third-party hosts; we don't store video files. Those services see your IP address when your browser loads from them.</p>
       <h2 className={h}>Your choices</h2>

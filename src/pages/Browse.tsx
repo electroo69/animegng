@@ -1,6 +1,5 @@
 import { useParams } from "react-router-dom"
 import { SITE_NAME, useHead } from "@/lib/seo"
-import { LeaderboardAd, withNativeAds } from "@/components/AdSlot"
 import { useInfiniteQuery } from "@tanstack/react-query"
 import { Loader2 } from "lucide-react"
 import { AnimeCard, CardSkeleton, EpisodeCard } from "@/components/AnimeCard"
@@ -45,14 +44,13 @@ export default function Browse() {
         </BlurFade>
         {latest ? (
           <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
-            {q.isLoading ? Array.from({ length: 12 }, (_, n) => <CardSkeleton key={n} landscape />) : withNativeAds((items as AiredItem[]).map((e) => <EpisodeCard key={`${e.anime.id}-${e.episode}`} item={e} />), 24)}
+            {q.isLoading ? Array.from({ length: 12 }, (_, n) => <CardSkeleton key={n} landscape />) : (items as AiredItem[]).map((e) => <EpisodeCard key={`${e.anime.id}-${e.episode}`} item={e} />)}
           </div>
         ) : (
           <div className="mt-8 grid grid-cols-2 gap-x-4 gap-y-7 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7">
-            {q.isLoading ? Array.from({ length: 18 }, (_, n) => <CardSkeleton key={n} />) : withNativeAds((items as Card[]).map((a, n) => <AnimeCard key={a.id} anime={a} rank={kind === "top" || kind === "trending" ? n + 1 : undefined} />))}
+            {q.isLoading ? Array.from({ length: 18 }, (_, n) => <CardSkeleton key={n} />) : (items as Card[]).map((a, n) => <AnimeCard key={a.id} anime={a} rank={kind === "top" || kind === "trending" ? n + 1 : undefined} />)}
           </div>
         )}
-        <LeaderboardAd className="mt-12" />
         {q.hasNextPage && (
           <div className="mt-10 flex justify-center">
             <button onClick={() => q.fetchNextPage()} disabled={q.isFetchingNextPage} className="flex h-11 items-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-8 text-sm font-semibold transition hover:border-primary/50 hover:bg-primary/10">

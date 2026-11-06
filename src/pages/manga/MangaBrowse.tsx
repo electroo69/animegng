@@ -1,6 +1,5 @@
 import { Link, useSearchParams } from "react-router-dom"
 import { ChevronLeft, ChevronRight } from "lucide-react"
-import { LeaderboardAd, withNativeAds } from "@/components/AdSlot"
 import { MangaCard, MangaCardSkeleton } from "@/components/MangaCard"
 import { Container } from "@/components/Section"
 import { useMangaSearch, type MangaSort } from "@/lib/manga"
@@ -65,7 +64,7 @@ export default function MangaBrowse() {
       {error && <p className="mt-8 rounded-xl border border-primary/30 bg-primary/10 p-4 text-sm">Manga search is temporarily unavailable. Please try again shortly.</p>}
 
       <div className={cn("mt-6 grid grid-cols-2 gap-x-4 gap-y-6 transition-opacity sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 2xl:grid-cols-8", isFetching && !isLoading && "opacity-60")}>
-        {isLoading ? Array.from({ length: 16 }, (_, n) => <MangaCardSkeleton key={n} />) : withNativeAds((data?.results ?? []).map((m) => <MangaCard key={m.id} manga={m} />), 32, 2)}
+        {isLoading ? Array.from({ length: 16 }, (_, n) => <MangaCardSkeleton key={n} />) : (data?.results ?? []).map((m) => <MangaCard key={m.id} manga={m} />)}
       </div>
 
       {data && !data.results.length && <p className="mt-10 text-center text-white/55">No manga found{q && ` for “${q}”`}. Try a shorter or different title.</p>}
@@ -82,7 +81,6 @@ export default function MangaBrowse() {
         </nav>
       )}
 
-      <LeaderboardAd className="mt-12" />
     </Container>
   )
 }

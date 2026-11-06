@@ -1,7 +1,6 @@
 import { useState } from "react"
 import { Link, useNavigate } from "react-router-dom"
 import { BookOpen, Search, X } from "lucide-react"
-import { LeaderboardAd, withNativeAds } from "@/components/AdSlot"
 import { MangaCard, MangaCardSkeleton } from "@/components/MangaCard"
 import { Container, Rail, Section, SectionHeader } from "@/components/Section"
 import { mangaHref, readHref, removeMangaProgress, useMangaHome, useMangaProgress } from "@/lib/manga"
@@ -49,12 +48,10 @@ export default function MangaHome() {
           </Rail>
         </Section>
 
-        <LeaderboardAd />
-
         <Section>
           <SectionHeader eyebrow="Fresh chapters" title="Latest Updates" href="/manga/browse?sort=latest" />
           <div className={GRID}>
-            {isLoading ? Array.from({ length: 16 }, (_, n) => <MangaCardSkeleton key={n} />) : withNativeAds((data?.latest.slice(0, 24) ?? []).map((m) => <MangaCard key={m.id} manga={m} />), 24, 1)}
+            {isLoading ? Array.from({ length: 16 }, (_, n) => <MangaCardSkeleton key={n} />) : (data?.latest.slice(0, 24) ?? []).map((m) => <MangaCard key={m.id} manga={m} />)}
           </div>
         </Section>
 

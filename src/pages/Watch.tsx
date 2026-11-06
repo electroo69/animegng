@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react"
 import { animeHref, clip, SITE_NAME, useHead } from "@/lib/seo"
-import { LeaderboardAd } from "@/components/AdSlot"
 import { Link, useNavigate, useParams } from "react-router-dom"
 import { AlertTriangle, Captions, ChevronLeft, ChevronRight, Clock, Lightbulb, Loader2, Mic, Search, Star, Users } from "lucide-react"
 import { AnimeCard } from "@/components/AnimeCard"
@@ -355,7 +354,6 @@ export default function Watch() {
 
             <Comments anime={id} ep={ep} />
 
-            <LeaderboardAd className="mt-10" />
           </div>
 
           <EpisodePanel animeId={id} current={ep} episodes={epList} total={total} loading={episodes.isLoading} onHover={(n) => prefetch(id, n, lang)} />

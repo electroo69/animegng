@@ -1,7 +1,6 @@
 import { useState } from "react"
 import { SaveButton, SubscribeButton } from "@/components/social/LibraryButtons"
 import { animeHref, clip, genreHref, GENRES, SITE_NAME, useHead } from "@/lib/seo"
-import { LeaderboardAd, withNativeAds } from "@/components/AdSlot"
 import { WatchLink } from "@/components/WatchLink"
 import { Link, useParams } from "react-router-dom"
 import { motion } from "motion/react"
@@ -175,8 +174,6 @@ export default function AnimeDetail() {
             {tab === "Details" && <Details a={a} />}
           </div>
 
-          <LeaderboardAd className="mt-16" />
-
           {a.recommendations.length > 0 && (
             <Section className="mt-16">
               <SectionHeader eyebrow="If you liked this" title="Recommended" />
@@ -242,7 +239,7 @@ function Characters({ a }: { a: Detail }) {
   if (!a.characters.length) return <p className="py-16 text-center text-white/45">No character data.</p>
   return (
     <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-      {withNativeAds(a.characters.map((c) => {
+      {a.characters.map((c) => {
         const va = c.voice_actors.find((v) => v.language === "Japanese") ?? c.voice_actors[0]
         return (
           <div key={c.id} className="flex items-stretch overflow-hidden rounded-xl border border-white/[0.07] bg-white/[0.02]">
@@ -262,7 +259,7 @@ function Characters({ a }: { a: Detail }) {
             )}
           </div>
         )
-      }), a.characters.length, 1)}
+      })}
     </div>
   )
 }
@@ -275,12 +272,12 @@ function Related({ a }: { a: Detail }) {
     <div className="space-y-10">
       {anime.length > 0 && (
         <div className="grid grid-cols-2 gap-x-4 gap-y-6 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
-          {withNativeAds(anime.map((r) => (
+          {anime.map((r) => (
             <div key={r.id}>
               <p className="mb-2 font-mono text-[10.5px] tracking-widest text-primary uppercase">{cap(r.relation_type)}</p>
               <AnimeCard anime={r} />
             </div>
-          )), Math.max(anime.length, 6), anime.length >= 6 ? 1 : 0)}
+          ))}
         </div>
       )}
       {other.length > 0 && (

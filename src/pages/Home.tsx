@@ -1,7 +1,6 @@
 import { lazy, startTransition, Suspense, useEffect, useState } from "react"
 import { Link } from "react-router-dom"
 import { genreHref, SITE_NAME, useHead } from "@/lib/seo"
-import { AdSlot, LeaderboardAd, withNativeAds } from "@/components/AdSlot"
 import { WatchLink } from "@/components/WatchLink"
 import { Play, X } from "lucide-react"
 import { HeroSpotlight } from "@/components/HeroSpotlight"
@@ -76,19 +75,16 @@ export default function Home() {
               </div>
             </Section>
 
-            <LeaderboardAd />
-
             <Section>
               <SectionHeader eyebrow={data ? `${cap(data.season.season)} ${data.season.year}` : "This season"} title="Airing This Season" href="/browse/seasonal" />
               <div className="grid grid-cols-2 gap-x-4 gap-y-6 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-4 2xl:grid-cols-6">
-                {isLoading ? Array.from({ length: 12 }, (_, n) => <CardSkeleton key={n} />) : withNativeAds((data?.seasonal ?? []).map((a) => <AnimeCard key={a.id} anime={a} />), 12, 1)}
+                {isLoading ? Array.from({ length: 12 }, (_, n) => <CardSkeleton key={n} />) : (data?.seasonal ?? []).map((a) => <AnimeCard key={a.id} anime={a} />)}
               </div>
             </Section>
           </div>
 
           <aside className="space-y-6 xl:sticky xl:top-24 xl:self-start">
             <TopTen />
-            <AdSlot size="300x250" />
             <AiringToday />
           </aside>
         </div>

@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from "react"
 import { SITE_NAME, useHead } from "@/lib/seo"
-import { LeaderboardAd, withNativeAds } from "@/components/AdSlot"
 import { useSearchParams } from "react-router-dom"
 import { useInfiniteQuery } from "@tanstack/react-query"
 import { Loader2, Minus, Plus, Search as SearchIcon, SlidersHorizontal, X } from "lucide-react"
@@ -174,7 +173,7 @@ export default function Search() {
         </div>
 
         <div className="grid grid-cols-2 gap-x-4 gap-y-7 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7">
-          {query.isLoading ? Array.from({ length: 18 }, (_, n) => <CardSkeleton key={n} />) : withNativeAds(results.map((a) => <AnimeCard key={a.id} anime={a} />))}
+          {query.isLoading ? Array.from({ length: 18 }, (_, n) => <CardSkeleton key={n} />) : results.map((a) => <AnimeCard key={a.id} anime={a} />)}
         </div>
         {!query.isLoading && !results.length && (
           <div className="py-24 text-center">
@@ -182,7 +181,6 @@ export default function Search() {
             <p className="mt-1 text-sm text-white/45">Try a different title or loosen the filters.</p>
           </div>
         )}
-        <LeaderboardAd className="mt-12" />
         {query.hasNextPage && (
           <div className="mt-10 flex justify-center">
             <button
