@@ -13,6 +13,10 @@ const PAGE_SIZE = 32;
 export const REMOVED = new Set([
   '01J76XYFHFZ88R32BW3RXHN1WP', '01J76XYFHVMSQVDJPQ42TN2XYN', '01J76XYFD97DRQQKK75FZB7PQH',
   '01J76XYC2K8QWFZZRYYCZMN6EF', '01J76XYBF8PQ831AW2N7B7BJVV', '01J76XY7HF84B23C36Q8536BP7',
+  // Their spin-offs: Slime (Ways of the Monster Nation, Slime Diaries, Trinity in Tempest, Workaholic Slime,
+  // Clayman Revenge) and Witch Hat Atelier Kitchen.
+  '01J76XYCBKK8QMM2EF32PF8SV6', '01J76XYD128GT4THCKFB0S4ZGR', '01J76XYDCVBBHFR4G6BSEHREHW',
+  '01J76XYDTQJGMNEEN82R994NMP', '01J76XYGM4G5JEPH075R48QVYX', '01J76XYGQVM3APKZHQDFPW84CM',
 ]);
 export const removedError = () => Object.assign(new Error('This series has been removed following a copyright notice.'), { status: 410 });
 
