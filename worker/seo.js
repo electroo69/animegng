@@ -274,7 +274,10 @@ async function edge(key, ttl, fn, ctx) {
     throw err;
   }
 }
-const mangaSeriesData = (id, ctx) => edge(`series/${id}`, 1800, () => manga.series(id), ctx);
+const mangaSeriesData = (id, ctx) => {
+  if (manga.REMOVED.has(id)) throw manga.removedError();
+  return edge(`series/${id}`, 1800, () => manga.series(id), ctx);
+};
 const mangaList = (list) => `<ul>${list.map((m) => `<li><a href="${mangaPath(m)}">${esc(m.title)}</a>${m.year ? ` (${m.year})` : ''}${m.type ? ` — ${esc(m.type)}` : ''}</li>`).join('')}</ul>`;
 const mangaItemList = (name, list) => ({
   '@context': 'https://schema.org', '@type': 'ItemList', name,
@@ -569,10 +572,16 @@ export async function handleSeo(request, env, ctx, fetchIndex) {
     page = await pageFor(url, env, ctx);
   } catch (err) {
     if (err.status === 404) page = null;
+    else if (err.status === 410) page = 'removed';
     else page = undefined; // upstream hiccup: serve the plain app rather than an error
   }
   if (page === undefined) return null;
   const index = await fetchIndex();
+  if (page === 'removed') {
+    return inject(new Response(index.body, { status: 410, headers: index.headers }), {
+      ...staticPage('Removed', 'This series has been removed following a copyright notice.', url.pathname, true), canonical: url.pathname,
+    });
+  }
   if (page === null) {
     return inject(new Response(index.body, { status: 404, headers: index.headers }), {
       ...staticPage('Page not found', 'This page does not exist on AnimeGang.', url.pathname, true), canonical: url.pathname,

@@ -243,6 +243,8 @@ export async function handle(request, path, ctx) {
     if (params.id !== undefined && !/^\d+$/.test(params.id)) return json(400, { error: 'id must be a numeric AniList id (use /search to find it)' });
     if ((params.sid ?? params.cid) !== undefined && !/^[0-9A-Z]{26}$/.test(params.sid ?? params.cid)) return json(400, { error: 'Invalid manga id' });
 
+    if (manga.REMOVED.has(params.sid)) return json(410, { error: manga.removedError().message });
+
     const cache = globalThis.caches?.default;
     const hit = await cache?.match(request);
     if (hit) return hit;

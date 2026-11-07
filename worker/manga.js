@@ -7,6 +7,15 @@ const COVERS = 'https://temp.compsci88.com/cover';
 const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36';
 const PAGE_SIZE = 32;
 
+// Series taken down after copyright notices. Kodansha via SENTINELL, Lumen notice 102828581 (2026-11-06):
+// The Fragrant Flower Blooms With Dignity, The Exiled Heavy Knight..., Gachiakuta, Witch Hat Atelier,
+// That Time I Got Reincarnated as a Slime, Hajime no Ippo. Their pages answer 410 and they're left out of lists.
+export const REMOVED = new Set([
+  '01J76XYFHFZ88R32BW3RXHN1WP', '01J76XYFHVMSQVDJPQ42TN2XYN', '01J76XYFD97DRQQKK75FZB7PQH',
+  '01J76XYC2K8QWFZZRYYCZMN6EF', '01J76XYBF8PQ831AW2N7B7BJVV', '01J76XY7HF84B23C36Q8536BP7',
+]);
+export const removedError = () => Object.assign(new Error('This series has been removed following a copyright notice.'), { status: 410 });
+
 async function fetchPage(path) {
   const res = await fetch(BASE + path, {
     headers: { 'User-Agent': UA, Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8', Referer: BASE + '/' },
@@ -91,7 +100,7 @@ export async function search({ q = '', sort, page: n = 1 } = {}) {
   });
   const html = await page(`/search/data?${params}`);
   const results = html.split('<article class="bg-base-300 flex gap-4 p-4">').slice(1).map(card).filter(Boolean);
-  return { page: Math.max(1, n), has_next: results.length === PAGE_SIZE, results };
+  return { page: Math.max(1, n), has_next: results.length === PAGE_SIZE, results: results.filter((r) => !REMOVED.has(r.id)) };
 }
 
 export async function home() {
@@ -101,6 +110,7 @@ export async function home() {
 
 /** Series detail plus the full chapter list (newest first). */
 export async function series(id) {
+  if (REMOVED.has(id)) throw removedError();
   const [html, chapters] = await Promise.all([page(`/series/${id}`), chapterList(id)]);
   const title = one(/<h1 class="hidden md:block[^"]*">([^<]+)/, html) ?? one(/<h1[^>]*>([^<]+)/, html);
   if (!title) throw Object.assign(new Error('Manga not found'), { status: 404 });
@@ -123,7 +133,12 @@ export async function series(id) {
 
 /** Page image URLs for one chapter, in reading order. */
 export async function chapter(id) {
-  const html = await page(`/chapters/${id}/images?is_prev=False&current_page=1&reading_style=long_strip`);
+  // The chapter's own page names its series, so chapters of removed series are refused too.
+  const [html, owner] = await Promise.all([
+    page(`/chapters/${id}/images?is_prev=False&current_page=1&reading_style=long_strip`),
+    page(`/chapters/${id}`).then((s) => s.match(/\/series\/([0-9A-Z]{26})/)?.[1]).catch(() => null),
+  ]);
+  if (REMOVED.has(owner)) throw removedError();
   const pages = uniq([...html.matchAll(/<img\s[^>]*?src="([^"]+)"[^>]*?alt="Page \d+"/g)].map((m) => m[1]));
   if (!pages.length) throw Object.assign(new Error('No pages found for this chapter'), { status: 404 });
   return { id, pages };
