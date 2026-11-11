@@ -1,4 +1,4 @@
-// Local dev server for the deployed API code (worker/app.js) on Node, anime and manga routes alike:
+// Local dev server for the deployed API code (worker/app.js) on Node:
 //   node scripts/dev-api.mjs   then run Vite with API_URL=http://localhost:3002
 import http from 'node:http';
 import { handle } from '../worker/app.js';

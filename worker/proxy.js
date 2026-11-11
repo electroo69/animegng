@@ -1,5 +1,4 @@
 import { storedServers, directWatch } from './direct-embeds.js';
-import { handle } from './app.js';
 import { missingEmbeds } from './embed-missing.js';
 
 // Only the public read-only anime API is forwarded to the configured backend.
@@ -8,8 +7,8 @@ export async function proxyApi(request, env, ctx) {
     return Response.json({ error: 'Method not allowed' }, { status: 405, headers: { Allow: 'GET, OPTIONS', 'Cache-Control': 'no-store' } });
   }
   const incoming = new URL(request.url);
-  // Manga is served here on Cloudflare: WeebCentral answers Vercel's servers with 403 but not Cloudflare's.
-  if (incoming.pathname.startsWith('/api/manga/')) return handle(request, incoming.pathname.slice(4), ctx);
+  // MangaGang has closed.
+  if (incoming.pathname.startsWith('/api/manga/')) return Response.json({ error: 'MangaGang has closed' }, { status: 410, headers: { 'Cache-Control': 'public, max-age=86400' } });
   const target = new URL(env.API_ORIGIN || 'https://animegng-api.vercel.app');
   target.pathname = incoming.pathname;
   target.search = incoming.search;
