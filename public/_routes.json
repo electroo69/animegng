@@ -1,5 +1,5 @@
 {
   "version": 1,
   "include": ["/*"],
-  "exclude": ["/embeds/*", "/favicon.png", "/logo.png", "/logo-nav.webp", "/sw.js"]
+  "exclude": ["/70b2e006daf10c0e1ec97c8cb49e64a1.txt", "/embeds/*", "/favicon.png", "/logo.png", "/logo-nav.webp", "/sw.js"]
 }

@@ -6,10 +6,11 @@
 //
 // Used by both the Pages middleware (functions/_middleware.js) and the Worker (worker/index.js).
 
+import { animeFaq, HOME_FAQ, HOME_HEADING, HOME_INTRO, LEGAL } from './content.js';
 
 export const SITE = 'https://animegng.com';
 const NAME = 'AnimeGang';
-const DEFAULT_DESC = 'Watch anime online free in HD with English sub and dub. Browse trending, seasonal and top-rated anime, episode guides and the weekly airing schedule on AnimeGang.';
+const DEFAULT_DESC = 'Watch anime online free in HD with English sub and dub, no sign-up needed. Stream trending, new-season and top-rated anime, with episode guides and the weekly schedule on AnimeGang.';
 const DEFAULT_IMAGE = `${SITE}/logo.png`;
 
 export const GENRES = ['Action', 'Adventure', 'Comedy', 'Drama', 'Fantasy', 'Horror', 'Mahou Shoujo', 'Mecha', 'Music', 'Mystery', 'Psychological', 'Romance', 'Sci-Fi', 'Slice of Life', 'Sports', 'Supernatural', 'Thriller'];
@@ -18,10 +19,10 @@ const KINDS = {
   trending: ['Trending Anime', 'The anime everyone is watching right now, updated daily from AniList trends.'],
   popular: ['Most Popular Anime of All Time', 'The most-watched anime ever, ranked by AniList members.'],
   top: ['Top Rated Anime of All Time', 'The highest-rated anime of all time, ranked by average AniList score.'],
-  seasonal: ['Anime Airing This Season', 'Every anime airing this season, sorted by popularity.'],
+  seasonal: ['New Anime This Season', 'Every new anime airing this season, sorted by popularity.'],
   upcoming: ['Upcoming Anime', 'The most anticipated anime that have not started airing yet.'],
   airing: ['Currently Airing Anime', 'Anime with new episodes airing every week.'],
-  latest: ['Latest Anime Episodes', 'The newest anime episodes released, updated as they air.'],
+  latest: ['New Anime Episodes Released Today', 'The latest anime episodes, listed as they are released.'],
 };
 
 // ------------------------------------------------------------------ helpers
@@ -79,13 +80,16 @@ const itemList = (name, list) => ({
   '@context': 'https://schema.org', '@type': 'ItemList', name,
   itemListElement: list.map((a, i) => ({ '@type': 'ListItem', position: i + 1, url: SITE + animePath(a), name: titleOf(a.title) })),
 });
-const nav = () => `<nav><a href="/">Home</a> · <a href="/browse/trending">Trending</a> · <a href="/browse/seasonal">This Season</a> · <a href="/browse/top">Top Rated</a> · <a href="/schedule">Schedule</a> · ${GENRES.slice(0, 8).map((g) => `<a href="/genre/${slugify(g)}">${esc(g)}</a>`).join(' · ')}</nav>`;
+const nav = () => `<nav><a href="/">Home</a> · <a href="/browse/trending">Trending</a> · <a href="/browse/seasonal">This Season</a> · <a href="/browse/top">Top Rated</a> · <a href="/movies">Movies</a> · <a href="/schedule">Schedule</a> · ${GENRES.slice(0, 8).map((g) => `<a href="/genre/${slugify(g)}">${esc(g)}</a>`).join(' · ')}</nav>`;
+// A visible FAQ and its FAQPage markup, from [question, answer] pairs.
+const faqLd = (faq) => ({ '@context': 'https://schema.org', '@type': 'FAQPage', mainEntity: faq.map(([q, a]) => ({ '@type': 'Question', name: q, acceptedAnswer: { '@type': 'Answer', text: a } })) });
+const faqHtml = (faq) => faq.map(([q, a]) => `<h3>${esc(q)}</h3><p>${esc(a)}</p>`).join('');
 
 async function home(env, ctx) {
   const d = await api('/home', env, ctx);
   const s = `${cap(d.season.season)} ${d.season.year}`;
   return {
-    title: `${NAME} — Watch Anime Online Free in HD (Sub & Dub)`,
+    title: `${NAME} — Watch Anime Online Free in HD | English Sub & Dub`,
     description: DEFAULT_DESC,
     canonical: '/',
     preload: d.trending.find((a) => a.banner_image)?.banner_image,
@@ -94,16 +98,19 @@ async function home(env, ctx) {
       { '@context': 'https://schema.org', '@type': 'WebSite', name: NAME, url: SITE + '/', potentialAction: { '@type': 'SearchAction', target: `${SITE}/search?q={search_term_string}`, 'query-input': 'required name=search_term_string' } },
       { '@context': 'https://schema.org', '@type': 'Organization', name: NAME, url: SITE + '/', logo: DEFAULT_IMAGE },
       itemList('Trending anime', d.trending),
+      faqLd(HOME_FAQ),
     ],
     body: `${(() => {
       const h = d.trending.find((a) => a.banner_image);
       return h ? `<a class="pr-hero" href="${animePath(h)}"><img src="${esc(h.banner_image)}" alt="" fetchpriority="high"><span class="pr-hero-t">${esc(titleOf(h.title))}</span></a>` : '';
-    })()}<h1>${NAME}: watch anime online free in HD</h1><p>${esc(DEFAULT_DESC)}</p>
+    })()}<h1>${esc(HOME_HEADING)}</h1><p>${esc(HOME_INTRO)}</p>
 <h2>Trending now</h2>${cardList(d.trending)}
 <h2>Airing this season (${esc(s)})</h2>${cardList(d.seasonal)}
 <h2>Latest episodes</h2><ul>${d.latest_aired.slice(0, 15).map((e) => `<li><a href="/watch/${e.anime.id}/${e.episode}">${esc(titleOf(e.anime.title))} episode ${e.episode}</a></li>`).join('')}</ul>
 <h2>Top rated anime</h2>${cardList(d.top_rated)}
-<h2>Upcoming anime</h2>${cardList(d.upcoming)}`,
+<h2>Upcoming anime</h2>${cardList(d.upcoming)}
+<h2>Watch anime free online: questions and answers</h2>${faqHtml(HOME_FAQ)}
+<p><a href="/movies">Anime movies</a> · <a href="/about">About</a> · <a href="/contact">Contact</a> · <a href="/dmca">DMCA</a> · <a href="/terms">Terms</a> · <a href="/privacy">Privacy</a></p>`,
   };
 }
 
@@ -129,8 +136,9 @@ async function anime(id, env, ctx) {
   const alt = [a.title.romaji, a.title.native].filter((x) => x && x !== t);
   const studio = a.studios?.filter((s) => s.is_main).map((s) => s.name) ?? [];
   const list = eps?.data ?? [];
+  const faq = animeFaq(a, total);
   return {
-    title: `${t} — Watch Online Free (Sub & Dub) | ${NAME}`,
+    title: `Watch ${t} Online Free — English Sub & Dub | ${NAME}`,
     description: clip(`Watch ${t} online free in HD${total ? `, all ${total} episodes` : ''}, English sub and dub. ${synopsis}`, 158),
     canonical: animePath(a),
     image: a.banner_image || a.cover_image?.extra_large,
@@ -146,17 +154,25 @@ async function anime(id, env, ctx) {
         sameAs: (a.external_links || []).filter((l) => /anilist|myanimelist|crunchyroll|netflix|wikipedia/i.test(l.site + l.url)).map((l) => l.url).slice(0, 6),
       },
       crumbs([['Home', '/'], [t, animePath(a)]]),
+      ...(faq.length ? [faqLd(faq)] : []),
     ],
-    body: `<article><h1>${esc(t)}</h1>${alt.length ? `<p>Also known as: ${esc(alt.join(' / '))}</p>` : ''}
+    body: `<article><h1>Watch ${esc(t)} online free</h1>${alt.length ? `<p>Also known as: ${esc(alt.join(' / '))}</p>` : ''}
 <p>${esc(facts)}</p>
 ${synopsis ? `<h2>Synopsis</h2><p>${esc(synopsis).replace(/\n+/g, '</p><p>')}</p>` : ''}
 ${list.length ? `<h2>${esc(t)} episodes</h2><ol>${list.slice(0, 200).map((e) => `<li><a href="/watch/${a.id}/${e.episode_number}">Episode ${e.episode_number}${e.title && !/^Episode \d+$/.test(e.title) ? `: ${esc(e.title)}` : ''}</a>${e.aired ? ` — aired ${date(e.aired)}` : ''}</li>`).join('')}</ol>` : ''}
 ${a.characters?.length ? `<h2>Main characters</h2><ul>${a.characters.map((c) => { const va = c.voice_actors?.find((v) => v.language === 'Japanese'); return `<li>${esc(c.name)} (${esc(cap(c.role))})${va ? ` — voiced by ${esc(va.name)}` : ''}</li>`; }).join('')}</ul>` : ''}
 ${a.relations?.filter((r) => r.type === 'ANIME').length ? `<h2>Related anime</h2><ul>${a.relations.filter((r) => r.type === 'ANIME').map((r) => `<li>${esc(cap(r.relation_type))}: <a href="${animePath(r)}">${esc(titleOf(r.title))}</a></li>`).join('')}</ul>` : ''}
-${a.recommendations?.length ? `<h2>Anime like ${esc(t)}</h2>${cardList(a.recommendations)}` : ''}
+${a.recommendations?.length ? `<h2>Anime like ${esc(t)}</h2>${cardList(a.recommendations)}${a.recommendations.length >= SIMILAR_MIN ? `<p><a href="${animePath(a)}/similar">More anime like ${esc(t)}</a></p>` : ''}` : ''}
+${faq.length ? `<h2>${esc(t)}: questions and answers</h2>${faqHtml(faq)}` : ''}
 <p>Genres: ${a.genres.map((g) => GENRES.includes(g) ? `<a href="/genre/${slugify(g)}">${esc(g)}</a>` : esc(g)).join(', ')}${a.season && a.season_year ? ` · Season: <a href="/season/${a.season_year}/${a.season.toLowerCase()}">${esc(cap(a.season))} ${a.season_year}</a>` : ''}</p></article>`,
   };
 }
+
+// "Anime like X" pages exist only where there are enough recommendations to be worth a page.
+const SIMILAR_MIN = 6;
+// An old episode with no synopsis and no still has nothing of its own to index. New episodes get theirs
+// a few weeks after airing, so they stay indexable. Same rule as src/pages/Watch.tsx.
+export const thinEpisode = (e) => !!e && !strip(e.description) && !e.thumbnail && !!e.aired && Date.now() - new Date(e.aired).getTime() > 60 * 86400_000;
 
 async function watch(id, ep, env, ctx) {
   const [a, eps] = await Promise.all([api(`/anime/${id}`, env, ctx), api(`/anime/${id}/episodes`, env, ctx).catch(() => null)]);
@@ -174,11 +190,14 @@ async function watch(id, ep, env, ctx) {
     description: clip(desc || `Watch ${t} episode ${ep} with English sub and dub.`, 500), thumbnailUrl: [thumb], uploadDate: uploaded,
     ...(e?.duration && { duration: `PT${e.duration}M` }), url: `${SITE}/watch/${id}/${ep}`,
   };
+  // Episodes around this one, with their titles: links between episodes and text that differs per page.
+  const near = (eps?.data ?? []).filter((x) => x.episode_number !== ep && Math.abs(x.episode_number - ep) <= 3);
   return {
-    title: `${t} Episode ${ep}${epTitle ? ` — ${epTitle}` : ''} | Watch Free | ${NAME}`,
+    title: `${t} Episode ${ep} English Sub & Dub — Watch Free | ${NAME}`,
     description: clip(`Watch ${t} episode ${ep}${epTitle ? ` "${epTitle}"` : ''} online free in HD with English sub and dub. ${desc}`, 158),
     canonical: `/watch/${id}/${ep}`,
     image: thumb,
+    noindex: thinEpisode(e),
     jsonld: [
       ...(video ? [video] : []),
       {
@@ -191,7 +210,10 @@ async function watch(id, ep, env, ctx) {
     ],
     body: `<article><h1>${esc(t)} Episode ${ep}${epTitle ? `: ${esc(epTitle)}` : ''}</h1>
 <p>Episode ${ep} of ${total || '?'} of <a href="${animePath(a)}">${esc(t)}</a>${e?.aired ? `, aired ${date(e.aired)}` : ''}${e?.duration ? `, ${e.duration} minutes` : ''}. Available with English subtitles${a.country === 'JP' ? ' and dub where released' : ''}.</p>
+${e?.is_filler ? `<p>This episode is filler: it is not adapted from the original story.</p>` : ''}${e?.is_recap ? `<p>This is a recap episode.</p>` : ''}
 ${desc ? `<h2>Episode summary</h2><p>${esc(desc)}</p>` : ''}
+<h2>About ${esc(t)}</h2><p>${esc(animeFacts(a, total))}</p>
+${near.length ? `<h2>More ${esc(t)} episodes</h2><ul>${near.map((x) => `<li><a href="/watch/${id}/${x.episode_number}">Episode ${x.episode_number}${x.title && !/^Episode \d+$/.test(x.title) ? `: ${esc(x.title)}` : ''}</a></li>`).join('')}</ul>` : ''}
 <p>${ep > 1 ? `<a href="/watch/${id}/${ep - 1}">Previous: episode ${ep - 1}</a>` : ''}${ep > 1 && ep < total ? ' · ' : ''}${ep < total ? `<a href="/watch/${id}/${ep + 1}">Next: episode ${ep + 1}</a>` : ''}</p></article>`,
   };
 }
@@ -240,20 +262,64 @@ async function season(year, s, env, ctx) {
   };
 }
 
+async function movies(env, ctx) {
+  const [pop, top, recent] = await Promise.all([
+    api('/search?format=MOVIE&sort=popularity_desc&limit=30', env, ctx),
+    api('/search?format=MOVIE&sort=score_desc&limit=10', env, ctx),
+    api('/search?format=MOVIE&status=FINISHED&sort=year_desc&limit=10', env, ctx).catch(() => ({ results: [] })),
+  ]);
+  const best = top.results[0];
+  const intro = `${NAME} lists ${pop.total >= 5000 ? 'thousands of' : pop.total.toLocaleString('en-US')} anime movies. ${best ? `The highest-rated is ${titleOf(best.title)}${best.average_score ? ` (${(best.average_score / 10).toFixed(1)}/10)` : ''}. ` : ''}The most popular is ${titleOf(pop.results[0].title)}.`;
+  return {
+    title: `Best Anime Movies — Watch Free Online | ${NAME}`, description: clip(`${intro} Watch anime movies free in HD with English sub and dub.`, 158), canonical: '/movies',
+    jsonld: [itemList('Most popular anime movies', pop.results), crumbs([['Home', '/'], ['Anime movies', '/movies']])],
+    body: `<h1>Best anime movies</h1><p>${esc(intro)}</p><h2>Most popular anime movies</h2>${cardList(pop.results)}<h2>Top rated anime movies</h2>${cardList(top.results)}${recent.results.length ? `<h2>New anime movies</h2>${cardList(recent.results)}` : ''}`,
+  };
+}
+
+// /anime/:id/:slug/similar — "Anime like X", from AniList's member recommendations for that title.
+async function similar(id, env, ctx) {
+  const [a, r] = await Promise.all([api(`/anime/${id}`, env, ctx), api(`/anime/${id}/recommendations`, env, ctx)]);
+  const recs = r.recommendations ?? [];
+  if (!recs.length) return null;
+  const t = titleOf(a.title);
+  const path = `${animePath(a)}/similar`;
+  const shared = (x) => (x.genres || []).filter((g) => a.genres?.includes(g));
+  return {
+    title: `Anime Like ${t} — ${recs.length} Similar Anime to Watch | ${NAME}`,
+    description: clip(`${recs.length} anime like ${t}, picked by fans: ${recs.slice(0, 4).map((x) => titleOf(x.title)).join(', ')} and more. Watch them free with English sub and dub.`, 158),
+    canonical: path, image: a.banner_image || a.cover_image?.extra_large, noindex: recs.length < SIMILAR_MIN,
+    jsonld: [itemList(`Anime like ${t}`, recs), crumbs([['Home', '/'], [t, animePath(a)], [`Anime like ${t}`, path]])],
+    body: `<h1>Anime like ${esc(t)}</h1><p>If you liked <a href="${animePath(a)}">${esc(t)}</a>, AniList members recommend these ${recs.length} anime. ${esc(animeFacts(a, aired(a)))}</p>
+<ol>${recs.map((x) => `<li><a href="${animePath(x)}">${esc(titleOf(x.title))}</a>${x.season_year ? ` (${x.season_year})` : ''}${x.format ? ` — ${esc(FORMAT[x.format] || x.format)}` : ''}${x.average_score ? `, ${(x.average_score / 10).toFixed(1)}/10` : ''}${shared(x).length ? `. Shares ${esc(shared(x).join(', ').toLowerCase())} with ${esc(t)}` : ''}.</li>`).join('')}</ol>`,
+  };
+}
+
+function legal(key) {
+  const d = LEGAL[key];
+  return {
+    title: `${d.title} | ${NAME}`, description: d.description, canonical: `/${key}`, jsonld: [crumbs([['Home', '/'], [d.title, `/${key}`]])],
+    body: `<article><h1>${esc(d.title)}</h1>${d.sections.map(([h, ...ps]) => `<h2>${esc(h)}</h2>${ps.map((p) => `<p>${esc(p)}</p>`).join('')}`).join('')}</article>`,
+  };
+}
+
 const staticPage = (title, description, canonical, noindex = false) => ({ title: `${title} | ${NAME}`, description, canonical, noindex, jsonld: [], body: `<h1>${esc(title)}</h1><p>${esc(description)}</p>` });
 
 async function pageFor(url, env, ctx) {
   const p = url.pathname.replace(/\/+$/, '') || '/';
   let m;
   if (p === '/') return home(env, ctx);
+  if ((m = p.match(/^\/anime\/(\d+)\/[\w-]+\/similar$/))) return similar(Number(m[1]), env, ctx);
   if ((m = p.match(/^\/anime\/(\d+)(?:\/[\w-]*)?$/))) return anime(Number(m[1]), env, ctx);
+  if (p === '/movies') return movies(env, ctx);
+  if (LEGAL[p.slice(1)]) return legal(p.slice(1));
   if ((m = p.match(/^\/watch\/(\d+)(?:\/(\d+))?$/))) return watch(Number(m[1]), Number(m[2] || 1), env, ctx);
   if ((m = p.match(/^\/browse\/([\w-]+)$/))) return browse(m[1], env, ctx);
   if ((m = p.match(/^\/genre\/([\w-]+)$/))) return genre(m[1], env, ctx);
   if ((m = p.match(/^\/season\/(\d{4})\/(\w+)$/))) return season(Number(m[1]), m[2], env, ctx);
   // MangaGang closed (2026-11-11): every manga URL answers 410 so search engines drop them.
   if (p === '/manga' || p.startsWith('/manga/')) throw Object.assign(new Error('MangaGang has closed'), { status: 410 });
-  if (p === '/schedule') return staticPage('Anime Airing Schedule', 'This week’s anime release schedule with air times in your timezone and countdowns to every new episode.', '/schedule');
+  if (p === '/schedule') return staticPage('Anime Schedule: Episodes Airing Today & This Week', 'Today’s and this week’s anime release schedule, with air times in your time zone and countdowns to every new episode.', '/schedule');
   // Filtered search result pages duplicate genre/season pages: keep them out of the index.
   if (p === '/search') return staticPage('Browse & Search Anime', 'Search thousands of anime by title, genre, format, season, year and status.', '/search', url.search.length > 1);
   return undefined;
@@ -306,12 +372,13 @@ function inject(res, page) {
 
 const xml = (body) => new Response(`<?xml version="1.0" encoding="UTF-8"?>\n${body}`, { headers: { 'Content-Type': 'application/xml; charset=utf-8', 'Cache-Control': 'public, max-age=3600' } });
 const urlset = (urls) => xml(`<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.map((u) => `<url><loc>${esc(SITE + u.loc)}</loc>${u.lastmod ? `<lastmod>${u.lastmod}</lastmod>` : ''}</url>`).join('\n')}\n</urlset>`);
-const ANIME_SITEMAPS = 20; // x 50 most popular each = 1,000 titles
+const ANIME_SITEMAPS = 100; // x 50 most popular each = 5,000 titles
+const SIMILAR_PAGES = 10; // "Anime like X" for the 500 most popular titles
 
 async function sitemap(p, env, ctx) {
   const today = new Date().toISOString().slice(0, 10);
   if (p === '/sitemap.xml') {
-    const files = ['pages', 'episodes', 'seasonal', ...Array.from({ length: ANIME_SITEMAPS }, (_, i) => `anime-${i + 1}`)];
+    const files = ['pages', 'episodes', 'seasonal', 'similar', ...Array.from({ length: ANIME_SITEMAPS }, (_, i) => `anime-${i + 1}`)];
     return xml(`<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${files.map((f) => `<sitemap><loc>${SITE}/sitemap-${f}.xml</loc></sitemap>`).join('\n')}\n</sitemapindex>`);
   }
   if (p === '/sitemap-pages.xml') {
@@ -319,7 +386,8 @@ async function sitemap(p, env, ctx) {
     const seasons = [];
     for (let i = 0, y = year, s = SEASONS.indexOf(S); i < 16; i++) { seasons.push(`/season/${y}/${SEASONS[s].toLowerCase()}`); if (--s < 0) { s = 3; y--; } }
     return urlset([
-      { loc: '/', lastmod: today }, { loc: '/schedule', lastmod: today },
+      { loc: '/', lastmod: today }, { loc: '/schedule', lastmod: today }, { loc: '/movies', lastmod: today },
+      ...Object.keys(LEGAL).map((k) => ({ loc: `/${k}` })), { loc: '/privacy' },
       ...Object.keys(KINDS).map((k) => ({ loc: `/browse/${k}`, lastmod: today })),
       ...GENRES.map((g) => ({ loc: `/genre/${slugify(g)}` })), ...seasons.map((loc) => ({ loc })),
     ]);
@@ -332,6 +400,10 @@ async function sitemap(p, env, ctx) {
     const [a, b] = await Promise.all([api('/list/seasonal?page=1&limit=50', env, ctx, 86400), api('/list/airing?page=1&limit=50', env, ctx, 86400)]);
     const seen = new Set();
     return urlset([...a.results, ...b.results].filter((x) => !seen.has(x.id) && seen.add(x.id)).map((x) => ({ loc: animePath(x), lastmod: today })));
+  }
+  if (p === '/sitemap-similar.xml') {
+    const pages = await Promise.all(Array.from({ length: SIMILAR_PAGES }, (_, i) => api(`/list/popular?page=${i + 1}&limit=50`, env, ctx, 86400)));
+    return urlset(pages.flatMap((d) => d.results).map((x) => ({ loc: `${animePath(x)}/similar` })));
   }
   const m = p.match(/^\/sitemap-anime-(\d+)\.xml$/);
   if (m && Number(m[1]) >= 1 && Number(m[1]) <= ANIME_SITEMAPS) {
@@ -380,6 +452,11 @@ AnimeGang is a free anime streaming and discovery site. Anime metadata (titles, 
 - [Top rated anime](${SITE}/browse/top)
 - [Most popular anime](${SITE}/browse/popular)
 - [Latest episodes](${SITE}/browse/latest)
+- [Anime movies](${SITE}/movies)
+- [About](${SITE}/about), [Contact](${SITE}/contact), [DMCA](${SITE}/dmca), [Terms](${SITE}/terms)
+
+## Common questions
+${HOME_FAQ.map(([q, a]) => `- ${q} ${a}`).join('\n')}
 
 ## Genres
 ${GENRES.map((g) => `- [${g} anime](${SITE}/genre/${slugify(g)})`).join('\n')}
@@ -387,6 +464,7 @@ ${GENRES.map((g) => `- [${g} anime](${SITE}/genre/${slugify(g)})`).join('\n')}
 ## URL patterns
 - Anime page: ${SITE}/anime/{anilist-id}/{slug} — synopsis, episode list, characters, related titles
 - Episode page: ${SITE}/watch/{anilist-id}/{episode-number}
+- Similar anime: ${SITE}/anime/{anilist-id}/{slug}/similar — fan recommendations for that title
 - Season page: ${SITE}/season/{year}/{winter|spring|summer|fall}
 `;
 

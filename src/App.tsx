@@ -15,6 +15,12 @@ const Schedule = lazy(() => import("@/pages/Schedule"))
 const Browse = lazy(() => import("@/pages/Browse"))
 const GenrePage = lazy(() => import("@/pages/Collection").then((m) => ({ default: m.GenrePage })))
 const SeasonPage = lazy(() => import("@/pages/Collection").then((m) => ({ default: m.SeasonPage })))
+const MoviesPage = lazy(() => import("@/pages/Collection").then((m) => ({ default: m.MoviesPage })))
+const SimilarPage = lazy(() => import("@/pages/Collection").then((m) => ({ default: m.SimilarPage })))
+const About = lazy(() => import("@/pages/Legal").then((m) => ({ default: m.About })))
+const Contact = lazy(() => import("@/pages/Legal").then((m) => ({ default: m.Contact })))
+const Dmca = lazy(() => import("@/pages/Legal").then((m) => ({ default: m.Dmca })))
+const Terms = lazy(() => import("@/pages/Legal").then((m) => ({ default: m.Terms })))
 const Library = lazy(() => import("@/pages/Library"))
 const Party = lazy(() => import("@/pages/Party"))
 const Settings = lazy(() => import("@/pages/Account").then((m) => ({ default: m.Settings })))
@@ -43,7 +49,9 @@ export default function App() {
         <Suspense fallback={<div className="min-h-[80vh]" />}>
           <Routes>
             <Route path="/" element={<Home />} />
+            <Route path="/anime/:id/:slug/similar" element={<SimilarPage />} />
             <Route path="/anime/:id/:slug?" element={<AnimeDetail />} />
+            <Route path="/movies" element={<MoviesPage />} />
             <Route path="/watch/:id/:ep?" element={<Watch />} />
             <Route path="/search" element={<Search />} />
             <Route path="/schedule" element={<Schedule />} />
@@ -55,6 +63,10 @@ export default function App() {
             <Route path="/settings" element={<Settings />} />
             <Route path="/reset" element={<ResetPassword />} />
             <Route path="/privacy" element={<Privacy />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/contact" element={<Contact />} />
+            <Route path="/dmca" element={<Dmca />} />
+            <Route path="/terms" element={<Terms />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </Suspense>

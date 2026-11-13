@@ -186,10 +186,12 @@ export default function Watch() {
 
   const epTitle = current?.title && !/^Episode \d+$/.test(current.title) ? current.title : ""
   useHead({
-    title: title ? `${title} Episode ${ep}${epTitle ? ` — ${epTitle}` : ""} | Watch Free | ${SITE_NAME}` : undefined,
+    title: title ? `${title} Episode ${ep} English Sub & Dub — Watch Free | ${SITE_NAME}` : undefined,
     description: title ? clip(`Watch ${title} episode ${ep}${epTitle ? ` "${epTitle}"` : ""} online free in HD with English sub and dub. ${current?.description || stripHtml(anime.data?.description)}`) : undefined,
     path: `/watch/${id}/${ep}`,
     image: current?.thumbnail ?? a?.banner_image,
+    // An old episode with no synopsis and no still has nothing of its own to index (worker/seo.js thinEpisode).
+    noindex: !!current && !current.description && !current.thumbnail && !!current.aired && Date.now() - new Date(current.aired).getTime() > 60 * 86400_000,
   })
 
   return (

@@ -11,7 +11,7 @@ import { countdown, formatLabel, titleOf } from "@/lib/format"
 import { cn } from "@/lib/utils"
 
 export default function Schedule() {
-  useHead({ title: `Anime Airing Schedule | ${SITE_NAME}`, description: "This week’s anime release schedule with air times in your timezone and countdowns to every new episode.", path: "/schedule" })
+  useHead({ title: `Anime Schedule: Episodes Airing Today & This Week | ${SITE_NAME}`, description: "Today’s and this week’s anime release schedule, with air times in your time zone and countdowns to every new episode.", path: "/schedule" })
   const [week, setWeek] = useState(0)
   const { data, isLoading, isFetching } = useSchedule(week)
   const today = new Date().toLocaleDateString("en-CA")

@@ -42,6 +42,8 @@ export function Footer() {
           <Link to="/browse/upcoming" className="text-white/55 transition hover:text-white">Upcoming</Link>
           <Link to="/browse/popular" className="text-white/55 transition hover:text-white">Most Popular</Link>
           <Link to="/browse/airing" className="text-white/55 transition hover:text-white">Airing Now</Link>
+          <Link to="/movies" className="text-white/55 transition hover:text-white">Anime Movies</Link>
+          <Link to="/browse/latest" className="text-white/55 transition hover:text-white">Latest Episodes</Link>
         </div>
       </div>
       <div className="relative mx-auto grid max-w-[1600px] gap-8 border-t border-white/[0.06] px-4 py-8 text-[13px] sm:px-6 lg:grid-cols-[2fr_1fr] lg:px-10">
@@ -67,7 +69,7 @@ export function Footer() {
         </div>
       </div>
       <div className="relative border-t border-white/[0.06] py-5 text-center text-xs text-white/35">
-        © {new Date().getFullYear()} AnimeGang. A fun side project. · <Link to="/privacy" className="hover:text-white">Privacy</Link>
+        © {new Date().getFullYear()} AnimeGang. A fun side project. · <Link to="/about" className="hover:text-white">About</Link> · <Link to="/contact" className="hover:text-white">Contact</Link> · <Link to="/dmca" className="hover:text-white">DMCA</Link> · <Link to="/terms" className="hover:text-white">Terms</Link> · <Link to="/privacy" className="hover:text-white">Privacy</Link>
       </div>
     </footer>
   )

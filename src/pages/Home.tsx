@@ -1,6 +1,8 @@
 import { lazy, startTransition, Suspense, useEffect, useState } from "react"
 import { Link } from "react-router-dom"
 import { genreHref, SITE_NAME, useHead } from "@/lib/seo"
+import { Faq } from "@/components/Faq"
+import { HOME_FAQ, HOME_HEADING, HOME_INTRO } from "../../worker/content.js"
 import { WatchLink } from "@/components/WatchLink"
 import { Play, X } from "lucide-react"
 import { HeroSpotlight } from "@/components/HeroSpotlight"
@@ -36,8 +38,8 @@ const GENRES = ["Action", "Adventure", "Comedy", "Drama", "Fantasy", "Horror", "
 
 export default function Home() {
   useHead({
-    title: `${SITE_NAME} — Watch Anime Online Free in HD (Sub & Dub)`,
-    description: "Watch anime online free in HD with English sub and dub. Browse trending, seasonal and top-rated anime, episode guides and the weekly airing schedule on AnimeGang.",
+    title: `${SITE_NAME} — Watch Anime Online Free in HD | English Sub & Dub`,
+    description: "Watch anime online free in HD with English sub and dub, no sign-up needed. Stream trending, new-season and top-rated anime, with episode guides and the weekly schedule on AnimeGang.",
     path: "/",
   })
   const { data, isLoading, error } = useHome()
@@ -60,6 +62,11 @@ export default function Home() {
           ))}
         </Marquee>
       </div>
+
+      <Container className="mt-10">
+        <h1 className="text-2xl font-black tracking-tight sm:text-3xl">{HOME_HEADING}</h1>
+        <p className="mt-2 max-w-3xl text-[15px] leading-relaxed text-white/60">{HOME_INTRO}</p>
+      </Container>
 
       {!ready ? <div className="min-h-screen" /> : <Container className="mt-12 space-y-14">
         {error && <p className="rounded-xl border border-primary/30 bg-primary/10 p-4 text-sm">Anime data is temporarily unavailable. Please try again shortly.</p>}
@@ -116,6 +123,8 @@ export default function Home() {
             ))}
           </Rail>
         </Section>
+
+        <Faq title="Watch anime free online: questions and answers" items={HOME_FAQ} />
       </Container>}
     </>
   )

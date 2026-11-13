@@ -2,6 +2,8 @@ import { useState } from "react"
 import { SaveButton, SubscribeButton } from "@/components/social/LibraryButtons"
 import { animeHref, clip, genreHref, GENRES, SITE_NAME, useHead } from "@/lib/seo"
 import { WatchLink } from "@/components/WatchLink"
+import { Faq } from "@/components/Faq"
+import { animeFaq } from "../../worker/content.js"
 import { Link, useParams } from "react-router-dom"
 import { motion } from "motion/react"
 import { Award, Clock, ExternalLink, Heart, Play, PlayCircle, Star, TrendingUp, Users } from "lucide-react"
@@ -31,7 +33,7 @@ export default function AnimeDetail() {
   const [more, setMore] = useState(false)
   const eps0 = episodes.data?.total ?? (a ? availableEpisodes(a) : 0)
   useHead({
-    title: a ? `${titleOf(a.title)} — Watch Online Free (Sub & Dub) | ${SITE_NAME}` : undefined,
+    title: a ? `Watch ${titleOf(a.title)} Online Free — English Sub & Dub | ${SITE_NAME}` : undefined,
     description: a ? clip(`Watch ${titleOf(a.title)} online free in HD${eps0 ? `, all ${eps0} episodes` : ""}, English sub and dub. ${stripHtml(a.description)}`) : undefined,
     path: a ? animeHref(a) : undefined,
     image: a?.banner_image ?? a?.cover_image.extra_large,
@@ -176,7 +178,7 @@ export default function AnimeDetail() {
 
           {a.recommendations.length > 0 && (
             <Section className="mt-16">
-              <SectionHeader eyebrow="If you liked this" title="Recommended" />
+              <SectionHeader eyebrow="If you liked this" title={`Anime like ${titleOf(a.title)}`} href={a.recommendations.length >= 6 ? `${animeHref(a)}/similar` : undefined} />
               <Rail>
                 {a.recommendations.map((r) => (
                   <div key={r.id} className="w-[42vw] shrink-0 snap-start sm:w-[190px]">
@@ -186,6 +188,10 @@ export default function AnimeDetail() {
               </Rail>
             </Section>
           )}
+
+          <div className="mt-16">
+            <Faq title={`${titleOf(a.title)}: questions and answers`} items={animeFaq(a, eps0)} />
+          </div>
         </Container>
       </div>
 

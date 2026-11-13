@@ -115,7 +115,7 @@ export function HeroSpotlight({ items }: { items: AnimeCard[] }) {
             {logo ? (
               <img src={logo} alt={titleOf(cur.title)} width={800} height={310} className="h-auto max-h-full w-auto max-w-[min(85vw,480px)] object-contain object-left drop-shadow-[0_8px_30px_rgba(0,0,0,0.6)]" />
             ) : (
-              <h1 className="line-clamp-2 text-4xl leading-[1.05] font-black tracking-tight text-white sm:text-5xl lg:text-6xl">{titleOf(cur.title)}</h1>
+              <h2 className="line-clamp-2 text-4xl leading-[1.05] font-black tracking-tight text-white sm:text-5xl lg:text-6xl">{titleOf(cur.title)}</h2>
             )}
           </div>
 

@@ -14,9 +14,9 @@ const KINDS: Record<string, { title: string; eyebrow: string; seo: [string, stri
   popular: { title: "Most Popular", eyebrow: "All-time favourites", seo: ["Most Popular Anime of All Time", "The most-watched anime ever, ranked by AniList members."] },
   top: { title: "Top Rated", eyebrow: "Hall of fame", seo: ["Top Rated Anime of All Time", "The highest-rated anime of all time, ranked by average AniList score."] },
   upcoming: { title: "Upcoming", eyebrow: "Coming soon", seo: ["Upcoming Anime", "The most anticipated anime that have not started airing yet."] },
-  seasonal: { title: "This Season", eyebrow: "Currently airing", seo: ["Anime Airing This Season", "Every anime airing this season, sorted by popularity."] },
+  seasonal: { title: "This Season", eyebrow: "Currently airing", seo: ["New Anime This Season", "Every new anime airing this season, sorted by popularity."] },
   airing: { title: "Airing Now", eyebrow: "On air", seo: ["Currently Airing Anime", "Anime with new episodes airing every week."] },
-  latest: { title: "Latest Episodes", eyebrow: "Fresh drops", seo: ["Latest Anime Episodes", "The newest anime episodes released, updated as they air."] },
+  latest: { title: "Latest Episodes", eyebrow: "Fresh drops", seo: ["New Anime Episodes Released Today", "The latest anime episodes, listed as they are released."] },
 }
 
 export default function Browse() {
