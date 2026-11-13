@@ -1,4 +1,6 @@
-# Ads: what we had (removed 2026-11-06)
+# Ads: what we had (removed 2026-11-06, restored 2026-11-13)
+
+**Update 2026-11-13:** the same four Adsterra units (728x90, 320x50, 300x250 and the 1:1 native banner) were put back, with the same loading and placements described below, plus the grids on the new `/movies` page. Popunder and Social Bar have not been added.
 
 Adsterra ads were removed completely so they can be reimplemented. This file records the old setup.
 The full old code is in git history: see the commit before "Remove Adsterra ads" (`git show HEAD~1:src/components/AdSlot.tsx`).

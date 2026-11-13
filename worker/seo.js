@@ -429,6 +429,10 @@ Disallow: /
 User-agent: *
 Allow: /
 Disallow: /api/u/
+Disallow: /ad.html
+Disallow: /native.html
+Disallow: /ad$
+Disallow: /native$
 Disallow: /embeds/
 Disallow: /party/
 Disallow: /library
